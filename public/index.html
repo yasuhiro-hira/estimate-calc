@@ -888,49 +888,16 @@ thead th:first-child{text-align:left;}
 </div>
 </body></html>`;
 
-  // iOSはBlob downloadが動かないので同一ページ内に表示
-  const old=document.getElementById('saveOverlay');
-  if(old)old.remove();
-  const overlay=document.createElement('div');
-  overlay.id='saveOverlay';
-  overlay.style.cssText='position:fixed;inset:0;z-index:300;background:#fff;overflow-y:auto;';
-  overlay.innerHTML=`
-    <div style="display:flex;gap:8px;padding:12px 16px;background:#f8f8f8;border-bottom:1px solid #e5e7eb;position:sticky;top:0;">
-      <button onclick="document.getElementById('saveOverlay').remove();" style="flex:1;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;font-size:14px;cursor:pointer;">← 戻る</button>
-    </div>
-    <div style="padding:16px;max-width:600px;margin:0 auto;">
-      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e40af;line-height:1.7;">
-        📱 保存するには：画面下の <strong>共有ボタン（□↑）</strong> →「ファイルに保存」<br>
-        💻 PCの場合：右クリック →「名前を付けて保存」
-      </div>
-      <div style="background:#2563eb;color:#fff;border-radius:12px 12px 0 0;padding:16px 20px;">
-        <div style="font-size:18px;font-weight:700;">${subject}</div>
-        <div style="font-size:12px;opacity:0.8;margin-top:4px;">${client?client+'　':''}${date}</div>
-      </div>
-      <div style="background:#ecfdf5;border:1.5px solid #059669;padding:14px 20px;display:flex;justify-content:space-between;align-items:baseline;">
-        <div style="font-size:13px;font-weight:700;color:#059669;">合計見積金額</div>
-        <div style="font-size:28px;font-weight:700;color:#059669;font-family:monospace;">${fmtN(totalFinal)}<span style="font-size:13px;color:#6b7280;margin-left:3px;">円</span></div>
-      </div>
-      <div style="background:#fff7ed;border-top:1px solid #fed7aa;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:12px;color:#d97706;font-weight:700;">全体粗利</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="font-size:15px;font-weight:700;color:#d97706;font-family:monospace;">${fmtN(profit)}</div>
-          <div style="font-size:11px;color:#d97706;background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:2px 8px;">${profitRate.toFixed(1)}%</div>
-        </div>
-      </div>
-      <table style="width:100%;border-collapse:collapse;background:#fff;">
-        <thead><tr>
-          <th style="background:#f8fafc;padding:8px 14px;font-size:11px;color:#6b7280;font-weight:700;text-align:left;border-bottom:1.5px solid #e5e7eb;">品目</th>
-          <th style="background:#f8fafc;padding:8px 14px;font-size:11px;color:#6b7280;font-weight:700;text-align:right;border-bottom:1.5px solid #e5e7eb;">見積</th>
-          <th style="background:#f8fafc;padding:8px 14px;font-size:11px;color:#6b7280;font-weight:700;text-align:right;border-bottom:1.5px solid #e5e7eb;">原価</th>
-          <th style="background:#f8fafc;padding:8px 14px;font-size:11px;color:#6b7280;font-weight:700;text-align:right;border-bottom:1.5px solid #e5e7eb;">粗利</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <div style="background:#fff;border-top:1px solid #e5e7eb;padding:10px 20px;font-size:10px;color:#9ca3af;text-align:right;">外構見積計算ツール　${date}</div>
-    </div>`;
-  document.body.appendChild(overlay);
-  overlay.scrollTop=0;
+  // HTMLファイルとしてダウンロード
+  const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '見積_' + subject + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
   closeSaveModal();
 }
 function openPdfModal(){
