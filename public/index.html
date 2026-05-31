@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="外構見積">
+<meta name="theme-color" content="#2563eb">
+<title>外構見積計算</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{
+  --bg:#f0f2f5;--card:#fff;--border:#e2e6ea;
+  --accent:#2563eb;--accent-light:#eff6ff;
+  --green:#059669;--green-light:#ecfdf5;
+  --orange:#d97706;--orange-light:#fffbeb;
+  --red:#dc2626;--text:#111827;--text2:#6b7280;--text3:#9ca3af;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;padding-bottom:80px;}
+header{background:var(--accent);padding:14px 16px;position:sticky;top:0;z-index:100;}
+header h1{font-size:16px;font-weight:700;color:#fff;}
+header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
+
+.card{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:16px;margin:12px 16px 0;}
+.card-title{font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--text2);text-transform:uppercase;margin-bottom:10px;}
+.gap{margin-top:12px;}
+
+/* タブ */
+.tab-bar{display:flex;gap:6px;margin:12px 16px 0;}
+.tab-btn{flex:1;padding:10px 4px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;color:var(--text2);background:var(--card);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;transition:all 0.12s;}
+.tab-btn.active{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
+.tab-panel{display:none;}
+.tab-panel.show{display:block;}
+
+/* 選択ボタン */
+.sel-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.sel-grid.col3{grid-template-columns:1fr 1fr 1fr;}
+.sel-btn{border:1.5px solid var(--border);border-radius:8px;padding:9px 6px;cursor:pointer;background:var(--card);text-align:center;font-size:12px;font-weight:700;color:var(--text2);transition:all 0.12s;-webkit-tap-highlight-color:transparent;line-height:1.3;}
+.sel-btn small{display:block;font-size:10px;font-weight:400;color:var(--text3);margin-top:2px;font-family:'JetBrains Mono',monospace;}
+.sel-btn.active{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
+.sel-btn:active{transform:scale(0.97);}
+.step{display:none;}
+.step.show{display:block;}
+
+/* 数値コントロール */
+.m-ctrl{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;}
+.m-ctrl-btn{width:46px;background:#f9fafb;border:none;font-size:22px;color:var(--text2);cursor:pointer;padding:8px 0;flex-shrink:0;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;}
+.m-ctrl-btn:active{background:var(--accent-light);color:var(--accent);}
+.m-ctrl input{border:none;border-left:1.5px solid var(--border);border-right:1.5px solid var(--border);border-radius:0;flex:1;text-align:center;font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:700;padding:7px 0;outline:none;color:var(--text);}
+
+/* 利益率 */
+.mg-btns{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.mg-btn{padding:6px 10px;border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text2);background:var(--card);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.12s;}
+.mg-btn.active{border-color:var(--orange);background:var(--orange-light);color:var(--orange);}
+.mg-custom{border:1.5px solid var(--border);border-radius:20px;padding:6px 8px;font-size:12px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--text);width:64px;text-align:center;outline:none;}
+
+/* 追加ボタン */
+.add-btn{display:block;width:calc(100% - 32px);margin:12px 16px 0;padding:14px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;border:none;border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.add-btn:active{opacity:0.85;transform:scale(0.98);}
+
+/* 品目カード */
+.items-wrap{margin:14px 16px 0;}
+.items-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.items-hd-title{font-size:13px;font-weight:700;}
+.items-clear{font-size:12px;color:var(--red);cursor:pointer;padding:4px 8px;}
+
+.item-card{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;}
+
+/* 1行サマリ */
+.item-summary{display:flex;align-items:center;padding:10px 12px;gap:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;}
+.item-summary:active{background:#f8fafc;}
+.item-sum-main{flex:1;min-width:0;}
+.item-sum-name{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-sum-calc{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--accent);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-sum-profit{font-size:11px;color:var(--orange);font-weight:700;white-space:nowrap;flex-shrink:0;}
+.item-sum-del{background:none;border:1px solid #fca5a5;border-radius:5px;color:var(--red);font-size:11px;padding:3px 7px;cursor:pointer;flex-shrink:0;}
+.item-sum-arrow{font-size:12px;color:var(--text3);flex-shrink:0;transition:transform 0.2s;}
+.item-sum-arrow.open{transform:rotate(180deg);}
+
+/* アコーディオン詳細 */
+.item-detail{display:none;border-top:1px solid var(--border);}
+.item-detail.open{display:block;}
+
+/* 内訳テーブル */
+.detail-col-hd{display:grid;grid-template-columns:1fr 80px;padding:4px 14px 2px;background:#fafafa;}
+.detail-col-hd span{font-size:10px;font-weight:700;color:var(--text3);text-align:right;}
+.detail-col-hd span:first-child{text-align:left;}
+.detail-row{display:grid;grid-template-columns:1fr 80px;padding:6px 14px;border-top:1px solid var(--border);}
+.detail-label{font-size:11px;color:var(--text2);}
+.detail-cost{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text2);text-align:right;}
+.detail-sep{border-top:1.5px dashed var(--border);margin:0 14px;}
+.detail-sep-label{font-size:10px;color:var(--text3);padding:3px 14px;background:#fafafa;}
+.detail-total-row{display:grid;grid-template-columns:1fr 80px;padding:7px 14px;background:var(--green-light);border-top:1.5px solid var(--green);}
+.detail-total-label{font-size:12px;font-weight:700;color:var(--green);}
+.detail-total-val{font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green);text-align:right;}
+
+/* 全体合計 */
+.grand-card{background:var(--card);border-radius:12px;border:1.5px solid var(--green);margin:8px 16px 0;overflow:hidden;}
+.grand-hd{background:var(--green);padding:8px 14px;font-size:12px;font-weight:700;color:#fff;}
+.grand-row{display:grid;grid-template-columns:1fr auto auto;padding:8px 14px;border-top:1px solid var(--border);}
+.grand-label{font-size:12px;color:var(--text2);}
+.grand-est{font-size:14px;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text);text-align:right;min-width:100px;}
+.grand-cost{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text2);text-align:right;min-width:90px;}
+.grand-total-row{background:var(--green-light);border-top:1.5px solid var(--green);padding:12px 14px;display:flex;justify-content:space-between;align-items:baseline;}
+.grand-total-label{font-size:13px;font-weight:700;color:var(--green);}
+.grand-total-val{font-size:26px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green);}
+.grand-total-val span{font-size:12px;color:var(--text2);margin-left:2px;}
+.grand-profit{background:#fff7ed;border-top:1px solid #fed7aa;padding:8px 14px;display:flex;align-items:center;gap:8px;}
+.grand-profit-label{font-size:12px;color:var(--orange);font-weight:700;flex:1;}
+.grand-profit-val{font-size:15px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--orange);}
+.grand-profit-rate{font-size:11px;color:var(--orange);background:var(--orange-light);border:1px solid #fcd34d;border-radius:12px;padding:2px 8px;}
+
+/* PDF */
+.pdf-btn{display:block;width:calc(100% - 32px);margin:10px 16px 0;padding:13px;background:#fff;color:var(--accent);font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;border:2px solid var(--accent);border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+
+/* 入力 */
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:11px;color:var(--text2);font-weight:500;}
+.field input{border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:15px;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text);background:#fff;outline:none;width:100%;}
+.field input:focus{border-color:var(--accent);}
+.col3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.col2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.hint{font-size:10px;color:var(--text3);margin-top:3px;text-align:center;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏗 外構見積計算</h1>
+  <p>品目追加 → 材工基礎込みm単価 → 合計</p>
+</header>
+
+<!-- タブ -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('fence')">🔲 メッシュフェンス</button>
+  <button class="tab-btn" onclick="switchTab('foundation')">⬜ 基礎単体</button>
+  <button class="tab-btn" onclick="switchTab('custom')">✏️ 手入力</button>
+</div>
+
+<!-- フェンスタブ -->
+<div id="tab-fence" class="tab-panel show">
+  <div class="card">
+    <div class="card-title">① メーカー</div>
+    <div class="sel-grid" id="makerGrid"></div>
+  </div>
+  <div class="card step" id="step-series">
+    <div class="card-title">② シリーズ</div>
+    <div class="sel-grid" id="seriesGrid"></div>
+  </div>
+  <div class="card step" id="step-height">
+    <div class="card-title">③ 高さ</div>
+    <div class="sel-grid col3" id="heightGrid"></div>
+  </div>
+  <div class="card step" id="step-m">
+    <div class="card-title">④ 施工延長（m）</div>
+    <div class="m-ctrl">
+      <button class="m-ctrl-btn" onclick="chg('fenceM',-0.5)">−</button>
+      <input type="number" id="fenceM" value="10" inputmode="decimal" oninput="onFenceMChange()">
+      <button class="m-ctrl-btn" onclick="chg('fenceM',0.5)">＋</button>
+    </div>
+
+    <div class="card-title gap">⑤ 施工費ベース（円/m）× 1.15</div>
+    <div class="m-ctrl">
+      <button class="m-ctrl-btn" onclick="chg('fenceLabor',-100)">−</button>
+      <input type="number" id="fenceLabor" value="0" inputmode="numeric" oninput="updateFenceLaborHint()">
+      <button class="m-ctrl-btn" onclick="chg('fenceLabor',100)">＋</button>
+    </div>
+    <div class="hint" id="fenceLaborHint"></div>
+
+    <div class="card-title gap">⑤ 基礎</div>
+    <div class="col2">
+      <button class="sel-btn" id="foundYesBtn" onclick="setFoundOpt(true)">基礎込み</button>
+      <button class="sel-btn" id="foundNoBtn"  onclick="setFoundOpt(false)">基礎なし</button>
+    </div>
+
+    <div id="found-section" style="display:none; margin-top:12px;">
+      <div class="card-title">基礎サイズ</div>
+      <div class="sel-grid col3" id="fenceFoundGrid"></div>
+      <div class="hint" id="foundQtyHint"></div>
+      <div class="card-title gap">施工費ベース（円/個）× 1.15</div>
+      <div class="m-ctrl">
+        <button class="m-ctrl-btn" onclick="chg('foundLabor',-100)">−</button>
+        <input type="number" id="foundLabor" value="2000" inputmode="numeric" oninput="updateFoundLaborHint()">
+        <button class="m-ctrl-btn" onclick="chg('foundLabor',100)">＋</button>
+      </div>
+      <div class="hint" id="foundLaborHint"></div>
+    </div>
+
+    <div class="card-title gap">⑥ 利益率</div>
+    <div class="mg-btns" id="fenceMgBtns">
+      <button class="mg-btn" data-v="0"  onclick="setMg('fence',0)">なし</button>
+      <button class="mg-btn" data-v="10" onclick="setMg('fence',10)">10%</button>
+      <button class="mg-btn" data-v="15" onclick="setMg('fence',15)">15%</button>
+      <button class="mg-btn" data-v="20" onclick="setMg('fence',20)">20%</button>
+      <button class="mg-btn" data-v="25" onclick="setMg('fence',25)">25%</button>
+      <button class="mg-btn" data-v="30" onclick="setMg('fence',30)">30%</button>
+      <input class="mg-custom" type="number" id="fenceMgCustom" placeholder="任意%" inputmode="decimal" oninput="setMgCustom('fence')">
+    </div>
+  </div>
+</div>
+
+<!-- 基礎単体タブ -->
+<div id="tab-foundation" class="tab-panel">
+  <div class="card">
+    <div class="card-title">① 基礎サイズ</div>
+    <div class="sel-grid col3" id="foundOnlyGrid"></div>
+  </div>
+  <div class="card step" id="step-found-only">
+    <div class="card-title">② 数量（個）</div>
+    <div class="m-ctrl">
+      <button class="m-ctrl-btn" onclick="chg('foundQty',-1)">−</button>
+      <input type="number" id="foundQty" value="1" inputmode="numeric">
+      <button class="m-ctrl-btn" onclick="chg('foundQty',1)">＋</button>
+    </div>
+    <div class="card-title gap">③ 施工費ベース（円/個）× 1.15</div>
+    <div class="m-ctrl">
+      <button class="m-ctrl-btn" onclick="chg('foundOnlyLabor',-100)">−</button>
+      <input type="number" id="foundOnlyLabor" value="2000" inputmode="numeric" oninput="updateFoundOnlyLaborHint()">
+      <button class="m-ctrl-btn" onclick="chg('foundOnlyLabor',100)">＋</button>
+    </div>
+    <div class="hint" id="foundOnlyLaborHint"></div>
+    <div class="card-title gap">④ 利益率</div>
+    <div class="mg-btns" id="foundMgBtns">
+      <button class="mg-btn" data-v="0"  onclick="setMg('found',0)">なし</button>
+      <button class="mg-btn" data-v="10" onclick="setMg('found',10)">10%</button>
+      <button class="mg-btn" data-v="15" onclick="setMg('found',15)">15%</button>
+      <button class="mg-btn" data-v="20" onclick="setMg('found',20)">20%</button>
+      <button class="mg-btn" data-v="25" onclick="setMg('found',25)">25%</button>
+      <button class="mg-btn" data-v="30" onclick="setMg('found',30)">30%</button>
+      <input class="mg-custom" type="number" id="foundMgCustom" placeholder="任意%" inputmode="decimal" oninput="setMgCustom('found')">
+    </div>
+  </div>
+</div>
+
+<!-- 手入力タブ -->
+<div id="tab-custom" class="tab-panel">
+  <div class="card">
+    <div class="field gap" style="margin-top:0;">
+      <label>品目名</label>
+      <input type="text" id="customName" placeholder="施工費・門扉など">
+    </div>
+    <div class="col3 gap">
+      <div class="field"><label>原価単価（円）</label><input type="number" id="customCost" placeholder="5000" inputmode="numeric"></div>
+      <div class="field"><label>数量</label><input type="number" id="customQty" placeholder="1" inputmode="decimal"></div>
+      <div class="field"><label>単位</label><input type="text" id="customUnit" placeholder="式"></div>
+    </div>
+    <div class="card-title gap">利益率</div>
+    <div class="mg-btns" id="customMgBtns">
+      <button class="mg-btn" data-v="0"  onclick="setMg('custom',0)">なし</button>
+      <button class="mg-btn" data-v="10" onclick="setMg('custom',10)">10%</button>
+      <button class="mg-btn" data-v="15" onclick="setMg('custom',15)">15%</button>
+      <button class="mg-btn" data-v="20" onclick="setMg('custom',20)">20%</button>
+      <button class="mg-btn" data-v="25" onclick="setMg('custom',25)">25%</button>
+      <button class="mg-btn" data-v="30" onclick="setMg('custom',30)">30%</button>
+      <input class="mg-custom" type="number" id="customMgCustom" placeholder="任意%" inputmode="decimal" oninput="setMgCustom('custom')">
+    </div>
+  </div>
+</div>
+
+<button class="add-btn" onclick="addItem()">＋ 品目を追加</button>
+
+<!-- 全体合計（品目リストの上） -->
+<div class="grand-card" id="grandCard" style="display:none;">
+  <div class="grand-hd">全体合計</div>
+  <div style="background:var(--green-light);padding:14px 16px;display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid rgba(5,150,105,0.2);">
+    <div style="font-size:13px;font-weight:700;color:var(--green);">合計見積金額</div>
+    <div style="font-size:28px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green);" id="grandVal">—<span style="font-size:13px;color:var(--text2);margin-left:2px;">円</span></div>
+  </div>
+  <div style="background:#fff7ed;border-top:1px solid #fed7aa;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+    <div style="font-size:12px;color:var(--orange);font-weight:700;flex:1;">全体粗利</div>
+    <div style="font-size:16px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--orange);" id="grandProfitAmt"></div>
+    <div style="font-size:11px;color:var(--orange);background:var(--orange-light);border:1px solid #fcd34d;border-radius:12px;padding:2px 8px;" id="grandProfitRate"></div>
+  </div>
+</div>
+
+<!-- 品目リスト -->
+<div class="items-wrap" id="itemsWrap" style="display:none;">
+  <div class="items-hd">
+    <div class="items-hd-title" id="itemsCount"></div>
+    <div class="items-clear" onclick="clearAll()">全クリア</div>
+  </div>
+  <div id="itemsList"></div>
+</div>
+
+<button class="pdf-btn" id="pdfBtn" onclick="openPdfModal()" style="display:none;">📄 見積書PDFを作成</button>
+<button class="pdf-btn" id="saveBtn" onclick="openSaveModal()" style="display:none;margin-top:8px;border-color:var(--green);color:var(--green);">💾 この見積を保存する</button>
+
+<!-- 保存モーダル -->
+<div id="saveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;padding:20px;overflow-y:auto;">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:480px;margin:0 auto;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px;">💾 見積を保存</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field"><label>件名（ファイル名になります）</label><input type="text" id="saveSubject" placeholder="山岡家瑞穂店 フェンス工事"></div>
+      <div class="field"><label>客先</label><input type="text" id="saveClient" placeholder="日本道路 株式会社"></div>
+      <div class="field"><label>日付</label><input type="text" id="saveDate"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px;">
+      <button onclick="closeSaveModal()" style="flex:1;padding:12px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;font-size:14px;cursor:pointer;">キャンセル</button>
+      <button onclick="saveEstimate()" style="flex:2;padding:12px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">ダウンロード</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDFモーダル -->
+<div id="pdfModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;padding:20px;overflow-y:auto;">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:480px;margin:0 auto;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px;">📄 見積書の情報を入力</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field"><label>宛先（会社名）</label><input type="text" id="pdfClient" placeholder="日本道路 株式会社"></div>
+      <div class="field"><label>件名</label><input type="text" id="pdfSubject" placeholder="山岡家瑞穂店 フェンス工事"></div>
+      <div class="field"><label>日付</label><input type="text" id="pdfDate"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px;">
+      <button onclick="closePdfModal()" style="flex:1;padding:12px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;font-size:14px;cursor:pointer;">キャンセル</button>
+      <button onclick="genPdf()" style="flex:2;padding:12px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">見積書を開く</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== マスタ =====
+const FENCE_MASTER = [
+  {id:101,maker:'積水樹脂',series:'G10',name:'G10H600B', price:5870, rate:53,height:600},
+  {id:102,maker:'積水樹脂',series:'G10',name:'G10H800B', price:6320, rate:53,height:800},
+  {id:103,maker:'積水樹脂',series:'G10',name:'G10H900B', price:6580, rate:53,height:900},
+  {id:104,maker:'積水樹脂',series:'G10',name:'G10H1000', price:6680, rate:53,height:1000},
+  {id:105,maker:'積水樹脂',series:'G10',name:'G10H1200', price:7380, rate:53,height:1200},
+  {id:106,maker:'積水樹脂',series:'G10',name:'G10H1500', price:8870, rate:53,height:1500},
+  {id:107,maker:'積水樹脂',series:'G10',name:'G10H1800', price:10340,rate:53,height:1800},
+  {id:108,maker:'積水樹脂',series:'G10',name:'G10H2000', price:13330,rate:53,height:2000},
+  {id:109,maker:'積水樹脂',series:'G10',name:'G10H2200', price:15040,rate:53,height:2200},
+  {id:110,maker:'積水樹脂',series:'G10',name:'G10H2500', price:16780,rate:53,height:2500},
+  {id:111,maker:'積水樹脂',series:'G10',name:'G10H3000', price:21450,rate:53,height:3000},
+  {id:201,maker:'朝日スチール',series:'UN-A',name:'UN-A600', price:7720, rate:54,height:600},
+  {id:202,maker:'朝日スチール',series:'UN-A',name:'UN-A800', price:8010, rate:54,height:800},
+  {id:203,maker:'朝日スチール',series:'UN-A',name:'UN-A900', price:8550, rate:54,height:900},
+  {id:204,maker:'朝日スチール',series:'UN-A',name:'UN-A1000',price:8800, rate:54,height:1000},
+  {id:205,maker:'朝日スチール',series:'UN-A',name:'UN-A1200',price:10100,rate:54,height:1200},
+  {id:206,maker:'朝日スチール',series:'UN-A',name:'UN-A1500',price:13300,rate:54,height:1500},
+  {id:207,maker:'朝日スチール',series:'UN-A',name:'UN-A1800',price:16200,rate:54,height:1800},
+  {id:208,maker:'朝日スチール',series:'UN-A',name:'UN-A2000',price:18000,rate:54,height:2000},
+  {id:209,maker:'朝日スチール',series:'UN-A',name:'UN-A2200',price:19300,rate:54,height:2200},
+  {id:210,maker:'朝日スチール',series:'UN-A',name:'UN-A2400',price:23900,rate:54,height:2400},
+  {id:211,maker:'朝日スチール',series:'UN-A',name:'UN-A3000',price:28800,rate:54,height:3000},
+];
+const FOUND_MASTER = [
+  {id:'f1', name:'180×180×450',     shikiri:650,  defLabor:2300},
+  {id:'f2', name:'200×200×450',     shikiri:850,  defLabor:2300},
+  {id:'f3', name:'250×250×250',     shikiri:800,  defLabor:2300},
+  {id:'f4', name:'300×300×250',     shikiri:1010, defLabor:2300},
+  {id:'f5', name:'300×300×300',     shikiri:1200, defLabor:2300},
+  {id:'f6', name:'300×300×400',     shikiri:1600, defLabor:4600},
+  {id:'f7', name:'300×300×400角欠②',shikiri:1780, defLabor:4600},
+  {id:'f8', name:'300×300×450',     shikiri:1800, defLabor:4600},
+  {id:'f9', name:'300×300×500',     shikiri:2000, defLabor:4600},
+  {id:'f10',name:'300×300×600',     shikiri:2460, defLabor:4600},
+];
+
+// ===== 状態 =====
+let currentTab='fence';
+let selMaker=null,selSeries=null,selFence=null;
+let selFenceFound=null,foundWithFence=null;
+let selFoundOnly=null;
+let mg={fence:0,found:0,custom:0};
+let groups=[]; // 追加済み品目グループ
+
+// ===== タブ =====
+function switchTab(t){
+  currentTab=t;
+  ['fence','foundation','custom'].forEach((n,i)=>{
+    document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n===t);
+    document.getElementById('tab-'+n).classList.toggle('show',n===t);
+  });
+}
+
+// ===== フェンス選択 =====
+function getMakers(){return[...new Set(FENCE_MASTER.map(p=>p.maker))];}
+function getSeriesByMaker(m){return[...new Set(FENCE_MASTER.filter(p=>p.maker===m).map(p=>p.series))];}
+function getByMakerSeries(m,s){return FENCE_MASTER.filter(p=>p.maker===m&&p.series===s).sort((a,b)=>a.height-b.height);}
+
+function renderMakerGrid(){
+  const g=document.getElementById('makerGrid');g.innerHTML='';
+  getMakers().forEach(maker=>{
+    const b=document.createElement('button');
+    b.className='sel-btn'+(selMaker===maker?' active':'');
+    b.textContent=maker;
+    b.onclick=()=>{
+      selMaker=maker;selSeries=null;selFence=null;
+      document.getElementById('fenceLabor').value=0;
+      document.getElementById('fenceLaborHint').textContent='';
+      renderMakerGrid();renderSeriesGrid();
+      document.getElementById('step-series').classList.add('show');
+      document.getElementById('step-height').classList.remove('show');
+      document.getElementById('step-m').classList.remove('show');
+    };
+    g.appendChild(b);
+  });
+}
+function renderSeriesGrid(){
+  const g=document.getElementById('seriesGrid');g.innerHTML='';
+  if(!selMaker)return;
+  getSeriesByMaker(selMaker).forEach(series=>{
+    const b=document.createElement('button');
+    b.className='sel-btn'+(selSeries===series?' active':'');
+    b.textContent=series;
+    b.onclick=()=>{selSeries=series;selFence=null;renderSeriesGrid();renderHeightGrid();document.getElementById('step-height').classList.add('show');document.getElementById('step-m').classList.remove('show');};
+    g.appendChild(b);
+  });
+}
+function renderHeightGrid(){
+  const g=document.getElementById('heightGrid');g.innerHTML='';
+  if(!selMaker||!selSeries)return;
+  getByMakerSeries(selMaker,selSeries).forEach(p=>{
+    const b=document.createElement('button');
+    b.className='sel-btn'+(selFence&&selFence.id===p.id?' active':'');
+    b.innerHTML=`H${p.height}<small>¥${p.price.toLocaleString()}</small>`;
+    b.onclick=()=>{
+      selFence=p;
+      renderHeightGrid();
+      document.getElementById('step-m').classList.add('show');
+      // 施工費ベース = 高さ（×1.15は自動）
+      document.getElementById('fenceLabor').value = p.height;
+      updateFenceLaborHint();
+    };
+    g.appendChild(b);
+  });
+}
+
+// ===== 基礎選択（フェンス内） =====
+function renderFenceFoundGrid(){
+  const g=document.getElementById('fenceFoundGrid');g.innerHTML='';
+  FOUND_MASTER.forEach(p=>{
+    const b=document.createElement('button');
+    b.className='sel-btn'+(selFenceFound&&selFenceFound.id===p.id?' active':'');
+    b.innerHTML=`□${p.name}<small>¥${p.shikiri.toLocaleString()}</small>`;
+    b.style.fontSize='10px';
+    b.onclick=()=>{selFenceFound=p;document.getElementById('foundLabor').value=Math.round(p.defLabor/1.15);updateFoundLaborHint();renderFenceFoundGrid();updateFoundHint();};
+    g.appendChild(b);
+  });
+}
+function setFoundOpt(v){
+  foundWithFence=v;
+  document.getElementById('foundYesBtn').classList.toggle('active',v);
+  document.getElementById('foundNoBtn').classList.toggle('active',!v);
+  document.getElementById('found-section').style.display=v?'block':'none';
+  if(!v)selFenceFound=null;
+}
+function updateFenceLaborHint(){
+  const v=parseFloat(document.getElementById('fenceLabor').value)||0;
+  const el=document.getElementById('fenceLaborHint');
+  if(el&&v>0) el.textContent=`${v.toLocaleString()} × 1.15 = ${Math.round(v*1.15).toLocaleString()}円/m`;
+  else if(el) el.textContent='';
+}
+function updateFoundLaborHint(){
+  const v=parseFloat(document.getElementById('foundLabor').value)||0;
+  const el=document.getElementById('foundLaborHint');
+  if(el&&v>0) el.textContent=`${v.toLocaleString()} × 1.15 = ${Math.round(v*1.15).toLocaleString()}円/個`;
+  else if(el) el.textContent='';
+}
+function updateFoundOnlyLaborHint(){
+  const v=parseFloat(document.getElementById('foundOnlyLabor').value)||0;
+  const el=document.getElementById('foundOnlyLaborHint');
+  if(el&&v>0) el.textContent=`${v.toLocaleString()} × 1.15 = ${Math.round(v*1.15).toLocaleString()}円/個`;
+  else if(el) el.textContent='';
+}
+function onFenceMChange(){updateFoundHint();}
+function updateFoundHint(){
+  const m=parseFloat(document.getElementById('fenceM').value)||0;
+  const qty=Math.ceil(m/2)+1;
+  const el=document.getElementById('foundQtyHint');
+  if(el)el.textContent=m>0?`基礎数：${m}÷2+1 = ${qty}個`:'';
+}
+
+// ===== 基礎単体 =====
+function renderFoundOnlyGrid(){
+  const g=document.getElementById('foundOnlyGrid');g.innerHTML='';
+  FOUND_MASTER.forEach(p=>{
+    const b=document.createElement('button');
+    b.className='sel-btn'+(selFoundOnly&&selFoundOnly.id===p.id?' active':'');
+    b.innerHTML=`□${p.name}<small>¥${p.shikiri.toLocaleString()}</small>`;
+    b.style.fontSize='10px';
+    b.onclick=()=>{selFoundOnly=p;document.getElementById('foundOnlyLabor').value=Math.round(p.defLabor/1.15);updateFoundOnlyLaborHint();renderFoundOnlyGrid();document.getElementById('step-found-only').classList.add('show');};
+    g.appendChild(b);
+  });
+}
+
+// ===== コントロール =====
+function chg(id,d){
+  const el=document.getElementById(id);
+  let v=Math.max(0,(parseFloat(el.value)||0)+d);
+  if(id==='fenceM')v=Math.round(v*10)/10;
+  el.value=v;
+  if(id==='fenceM')updateFoundHint();
+  if(id==='fenceLabor')updateFenceLaborHint();
+  if(id==='foundLabor')updateFoundLaborHint();
+  if(id==='foundOnlyLabor')updateFoundOnlyLaborHint();
+}
+function setMg(type,v){
+  mg[type]=v;
+  document.getElementById(type+'MgCustom').value='';
+  document.querySelectorAll(`#${type}MgBtns .mg-btn`).forEach(b=>b.classList.toggle('active',parseInt(b.dataset.v)===v));
+}
+function setMgCustom(type){
+  const v=parseFloat(document.getElementById(type+'MgCustom').value);
+  mg[type]=isNaN(v)?0:v;
+  document.querySelectorAll(`#${type}MgBtns .mg-btn`).forEach(b=>b.classList.remove('active'));
+}
+['fence','found','custom'].forEach(t=>setMg(t,0));
+
+// ===== 計算ヘルパー =====
+const fmt=n=>'¥'+Math.round(n).toLocaleString();
+const ceilK=(n,k)=>Math.ceil(n/k)*k; // k単位切り上げ
+
+function calcFenceGroup(fence, m, fenceLaborPerM, found, foundQty, foundLabor, margin){
+  // フェンス原価
+  const shikiri=fence.price*(fence.rate/100);
+  const mat=shikiri*m;
+  const loss=mat*0.05;
+  const lab=fenceLaborPerM*m;  // 施工費は引数から
+  const fenceCost=mat+loss+lab;
+
+  // 基礎原価
+  let foundMat=0,foundLab=0,foundCost=0;
+  if(found&&foundQty>0){
+    foundMat=found.shikiri*foundQty;
+    foundLab=foundLabor*foundQty;
+    foundCost=foundMat+foundLab;
+  }
+
+  const totalCost=fenceCost+foundCost;
+
+  // m単価：合計原価÷m → 利益乗せ → 千円切り上げ
+  const costPerM=totalCost/m;
+  const sellPerM=margin>0&&margin<100?costPerM/(1-margin/100):costPerM;
+  const estPerM=ceilK(sellPerM,100); // 100円切り上げ
+  const estTotal=Math.round(estPerM*m);
+
+  // 値引き（万円切り捨て）
+  const discount=estTotal%10000;
+  const finalEst=estTotal-discount;
+  const profit=finalEst-totalCost;
+  const profitRate=finalEst>0?profit/finalEst*100:0;
+
+  return {
+    m, estPerM, estTotal, discount, finalEst,
+    totalCost, profit, profitRate,
+    fence:{mat,loss,lab,cost:fenceCost},
+    found:{mat:foundMat,lab:foundLab,cost:foundCost,qty:foundQty},
+  };
+}
+
+// ===== 品目追加 =====
+function addItem(){
+  if(currentTab==='fence'){
+    if(!selFence){alert('高さまで選択してください');return;}
+    const m=parseFloat(document.getElementById('fenceM').value)||0;
+    if(m<=0){alert('延長を入力してください');return;}
+    if(foundWithFence===null){alert('基礎込み / 基礎なし を選択してください');return;}
+    if(foundWithFence&&!selFenceFound){alert('基礎サイズを選択してください');return;}
+    const foundQty=foundWithFence?Math.ceil(m/2)+1:0;
+    const foundLaborBase=foundWithFence?(parseFloat(document.getElementById('foundLabor').value)||0):0;
+    const foundLabor=Math.round(foundLaborBase*1.15);
+    const fenceLaborBase=parseFloat(document.getElementById('fenceLabor').value)||selFence.height;
+    const fenceLaborPerM=Math.round(fenceLaborBase*1.15);
+    const margin=mg.fence;
+    const res=calcFenceGroup(selFence,m,fenceLaborPerM,foundWithFence?selFenceFound:null,foundQty,foundLabor,margin);
+
+    const withFoundLabel=foundWithFence?` 基礎込み □${selFenceFound.name}`:' 基礎別';
+    const fenceNaiyaku=`${selFence.name}${withFoundLabel}`;
+    groups.push({
+      id:Date.now(), type:'fence',
+      hinshuu:'メッシュフェンス',      // 品種
+      naiyaku: fenceNaiyaku,           // 内訳
+      title:`${selFence.maker} ${selFence.name}${withFoundLabel}`,
+      titleSub:`×${m}m`,
+      withFound:foundWithFence,
+      foundName:foundWithFence?selFenceFound.name:'',
+      foundQty,foundLabor,
+      fence:selFence, m, fenceLaborPerM, margin, res,
+      estFinal:res.finalEst,
+      costTotal:res.totalCost,
+    });
+    renderGroups();
+    resetToTop();
+  }
+  else if(currentTab==='foundation'){
+    if(!selFoundOnly){alert('基礎サイズを選択してください');return;}
+    const qty=parseFloat(document.getElementById('foundQty').value)||0;
+    if(qty<=0){alert('数量を入力してください');return;}
+    const laborBase=parseFloat(document.getElementById('foundOnlyLabor').value)||0;
+    const labor=Math.round(laborBase*1.15);
+    const mat=selFoundOnly.shikiri*qty;
+    const lab=labor*qty;
+    const cost=mat+lab;
+    const margin=mg.found;
+    const sellPerUnit=margin>0&&margin<100?(cost/qty)/(1-margin/100):cost/qty;
+    const estPerUnit=ceilK(sellPerUnit,100);
+    const estTotal=Math.round(estPerUnit*qty);
+    const discount=estTotal%10000;
+    const finalEst=estTotal-discount;
+    const profit=finalEst-cost;
+    const profitRate=finalEst>0?profit/finalEst*100:0;
+    groups.push({
+      id:Date.now(), type:'foundation',
+      hinshuu:'独立基礎',
+      naiyaku:`□${selFoundOnly.name}`,
+      title:`独立基礎 □${selFoundOnly.name}`,
+      titleSub:`×${qty}個`,
+      qty, labor, mat, lab, cost,
+      estPerUnit, estTotal, discount, finalEst, profit, profitRate,
+      estFinal:finalEst, costTotal:cost,
+    });
+    renderGroups();
+    resetToTop();
+  }
+  else if(currentTab==='custom'){
+    const name=document.getElementById('customName').value.trim();
+    const costUnit=parseFloat(document.getElementById('customCost').value)||0;
+    const qty=parseFloat(document.getElementById('customQty').value)||0;
+    const unit=document.getElementById('customUnit').value||'式';
+    if(!name||!costUnit||!qty){alert('品目名・原価単価・数量を入力してください');return;}
+    const cost=costUnit*qty;
+    const margin=mg.custom;
+    const sellPerUnit=margin>0&&margin<100?costUnit/(1-margin/100):costUnit;
+    const estPerUnit=ceilK(sellPerUnit,100);
+    const estTotal=Math.round(estPerUnit*qty);
+    const discount=estTotal%10000;
+    const finalEst=estTotal-discount;
+    const profit=finalEst-cost;
+    const profitRate=finalEst>0?profit/finalEst*100:0;
+    groups.push({
+      id:Date.now(), type:'custom',
+      hinshuu:name,
+      naiyaku:'',
+      title:name, titleSub:`×${qty}${unit}`,
+      costUnit, qty, unit, cost,
+      estPerUnit, estTotal, discount, finalEst, profit, profitRate,
+      estFinal:finalEst, costTotal:cost,
+    });
+    renderGroups();
+    resetToTop();
+  }
+}
+
+// ===== 描画 =====
+function renderGroups(){
+  const wrap=document.getElementById('itemsWrap');
+  const list=document.getElementById('itemsList');
+  if(groups.length===0){wrap.style.display='none';renderGrand();return;}
+  wrap.style.display='block';
+  document.getElementById('itemsCount').textContent=`品目一覧 (${groups.length}件)`;
+  list.innerHTML='';
+  groups.forEach(g=>list.appendChild(makeCard(g)));
+  renderGrand();
+}
+
+function makeCard(g){
+  const card=document.createElement('div');
+  card.className='item-card';
+
+  // サマリ行の計算式テキストを生成
+  let calcText='', profitText='';
+  if(g.type==='fence'){
+    const r=g.res;
+    calcText=`¥${r.estPerM.toLocaleString()} × ${g.m}m = ¥${r.estTotal.toLocaleString()}`;
+    profitText=`粗利 ${r.profitRate.toFixed(1)}%`;
+  } else if(g.type==='foundation'){
+    calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}個 = ¥${g.finalEst.toLocaleString()}`;
+    profitText=`粗利 ${g.profitRate.toFixed(1)}%`;
+  } else {
+    calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}${g.unit} = ¥${g.finalEst.toLocaleString()}`;
+    profitText=`粗利 ${g.profitRate.toFixed(1)}%`;
+  }
+
+  // 詳細HTML
+  let detailHTML='';
+  if(g.type==='fence'){
+    const r=g.res;
+    const shikiri=Math.round(g.fence.price*(g.fence.rate/100));
+    const foundDetail=g.withFound?`
+      <div class="detail-sep"></div>
+      <div class="detail-sep-label">独立基礎 □${g.foundName} ×${g.foundQty}個</div>
+      <div class="detail-row"><div class="detail-label">材料費（仕切価格）</div><div class="detail-cost">${fmt(r.found.mat)}</div></div>
+      <div class="detail-row"><div class="detail-label">施工費（¥${g.foundLabor.toLocaleString()}/個）</div><div class="detail-cost">${fmt(r.found.lab)}</div></div>`:'';
+    detailHTML=`
+      <div class="detail-col-hd"><span>原価内訳</span><span>原価</span></div>
+      <div class="detail-row"><div class="detail-label">材料費（仕切 ¥${shikiri.toLocaleString()}/m）</div><div class="detail-cost">${fmt(r.fence.mat)}</div></div>
+      <div class="detail-row"><div class="detail-label">材料ロス（5%）</div><div class="detail-cost">${fmt(r.fence.loss)}</div></div>
+      <div class="detail-row"><div class="detail-label">施工費（¥${((g.fenceLaborPerM)||Math.round(g.fence.height*1.15)).toLocaleString()}/m × ${g.m}m）</div><div class="detail-cost">${fmt(r.fence.lab)}</div></div>
+      ${foundDetail}
+      <div class="detail-total-row">
+        <div class="detail-total-label">合計原価　¥${Math.round(r.totalCost/g.m).toLocaleString()}/m</div>
+        <div class="detail-total-val">${fmt(r.totalCost)}</div>
+      </div>`;
+  } else if(g.type==='foundation'){
+    detailHTML=`
+      <div class="detail-col-hd"><span>原価内訳</span><span>原価</span></div>
+      <div class="detail-row"><div class="detail-label">材料費（仕切価格）</div><div class="detail-cost">${fmt(g.mat)}</div></div>
+      <div class="detail-row"><div class="detail-label">施工費（¥${g.labor.toLocaleString()}/個）</div><div class="detail-cost">${fmt(g.lab)}</div></div>
+      <div class="detail-total-row">
+        <div class="detail-total-label">合計原価</div>
+        <div class="detail-total-val">${fmt(g.cost)}</div>
+      </div>`;
+  } else {
+    detailHTML=`
+      <div class="detail-col-hd"><span>原価内訳</span><span>原価</span></div>
+      <div class="detail-row"><div class="detail-label">¥${g.costUnit.toLocaleString()}/${g.unit} × ${g.qty}${g.unit}</div><div class="detail-cost">${fmt(g.cost)}</div></div>
+      <div class="detail-total-row">
+        <div class="detail-total-label">合計原価</div>
+        <div class="detail-total-val">${fmt(g.cost)}</div>
+      </div>`;
+  }
+
+  const uid=g.id;
+  card.innerHTML=`
+    <div class="item-summary" onclick="toggleDetail(${uid})">
+      <div class="item-sum-main">
+        <div class="item-sum-name">${g.title} ${g.titleSub}</div>
+        <div class="item-sum-calc">${calcText}</div>
+      </div>
+      <div class="item-sum-profit">${profitText}</div>
+      <button class="item-sum-del" onclick="event.stopPropagation();delGroup(${uid})">削除</button>
+      <div class="item-sum-arrow" id="arrow-${uid}">▼</div>
+    </div>
+    <div class="item-detail" id="detail-${uid}">
+      ${detailHTML}
+    </div>`;
+  return card;
+}
+
+function toggleDetail(id){
+  const detail=document.getElementById('detail-'+id);
+  const arrow=document.getElementById('arrow-'+id);
+  if(!detail||!arrow)return;
+  const open=detail.classList.toggle('open');
+  arrow.textContent=open?'▲':'▼';
+}
+
+function delGroup(id){groups=groups.filter(g=>g.id!==id);renderGroups();}
+function clearAll(){if(!confirm('全クリアしますか？'))return;groups=[];renderGroups();}
+
+function resetToTop(){
+  const safe=(id,fn)=>{const el=document.getElementById(id);if(el)fn(el);};
+
+  selMaker=null;selSeries=null;selFence=null;
+  selFenceFound=null;foundWithFence=null;
+
+  safe('step-series',el=>el.classList.remove('show'));
+  safe('step-height',el=>el.classList.remove('show'));
+  safe('step-m',el=>el.classList.remove('show'));
+  safe('found-section',el=>el.style.display='none');
+  safe('foundYesBtn',el=>el.classList.remove('active'));
+  safe('foundNoBtn',el=>el.classList.remove('active'));
+  safe('fenceLabor',el=>el.value=0);
+  safe('fenceLaborHint',el=>el.textContent='');
+  safe('fenceM',el=>el.value=10);
+  renderMakerGrid();renderSeriesGrid();renderHeightGrid();renderFenceFoundGrid();
+
+  selFoundOnly=null;
+  safe('step-found-only',el=>el.classList.remove('show'));
+  safe('foundQty',el=>el.value=1);
+  safe('foundOnlyLabor',el=>el.value=0);
+  safe('foundOnlyLaborHint',el=>el.textContent='');
+  renderFoundOnlyGrid();
+
+  safe('customName',el=>el.value='');
+  safe('customCost',el=>el.value='');
+  safe('customQty',el=>el.value='');
+  safe('customUnit',el=>el.value='');
+
+  ['fence','found','custom'].forEach(t=>setMg(t,0));
+  switchTab('fence');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderGrand(){
+  const card=document.getElementById('grandCard');
+  const pdfBtn=document.getElementById('pdfBtn');
+  const saveBtn=document.getElementById('saveBtn');
+  if(groups.length===0){card.style.display='none';pdfBtn.style.display='none';saveBtn.style.display='none';return;}
+  card.style.display='block';pdfBtn.style.display='block';saveBtn.style.display='block';
+
+  const totalFinal=groups.reduce((s,g)=>s+g.estFinal,0);
+  const totalCost=groups.reduce((s,g)=>s+g.costTotal,0);
+  const totalProfit=totalFinal-totalCost;
+  const totalProfitRate=totalFinal>0?totalProfit/totalFinal*100:0;
+
+  document.getElementById('grandVal').innerHTML=`${totalFinal.toLocaleString()}<span>円</span>`;
+  document.getElementById('grandProfitAmt').textContent=fmt(totalProfit);
+  document.getElementById('grandProfitRate').textContent=`${totalProfitRate.toFixed(1)}%`;
+  window.lastGroups = JSON.parse(JSON.stringify(groups)); // 最新データを完全コピー
+}
+
+// ===== 保存 =====
+function openSaveModal(){
+  const today=new Date();
+  const el=document.getElementById('saveDate');
+  if(!el.value) el.value=`令和${today.getFullYear()-2018}年${today.getMonth()+1}月${today.getDate()}日`;
+  document.getElementById('saveModal').style.display='block';
+}
+function closeSaveModal(){document.getElementById('saveModal').style.display='none';}
+
+function saveEstimate(){
+  const gs=window.lastGroups;
+  if(!gs||gs.length===0){alert('品目がありません');return;}
+  const subject=document.getElementById('saveSubject').value||'見積';
+  const client =document.getElementById('saveClient').value||'';
+  const date   =document.getElementById('saveDate').value||'';
+  const totalFinal=gs.reduce((s,g)=>s+g.estFinal,0);
+  const totalCost =gs.reduce((s,g)=>s+g.costTotal,0);
+  const profit=totalFinal-totalCost;
+  const profitRate=totalFinal>0?profit/totalFinal*100:0;
+  const fmtN=n=>Math.round(n).toLocaleString();
+
+  const rows=gs.map(g=>{
+    const qty=g.type==='fence'?g.m:g.qty;
+    const unit=g.type==='fence'?'m':(g.type==='foundation'?'個':g.unit);
+    const perUnit=g.type==='fence'?(g.res&&g.res.estPerM||0):g.estPerUnit;
+    const estTotal=g.type==='fence'?(g.res&&g.res.estTotal||g.estFinal):g.estFinal;
+    const pRate=g.type==='fence'?(g.res&&g.res.profitRate||0):g.profitRate;
+    const calcStr=g.type==='fence'
+      ?`¥${perUnit.toLocaleString()} × ${qty}m = ¥${estTotal.toLocaleString()}`
+      :`¥${perUnit.toLocaleString()} × ${qty}${unit}`;
+    return `<tr>
+      <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">
+        <div style="font-size:13px;font-weight:700;">${g.title} ${g.titleSub}</div>
+        <div style="font-size:12px;color:#2563eb;margin-top:2px;font-family:monospace;">${calcStr}</div>
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;text-align:right;font-family:monospace;font-size:14px;font-weight:700;">${fmtN(g.estFinal)}<span style="font-size:11px;color:#6b7280;">円</span></td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;text-align:right;font-family:monospace;font-size:13px;color:#6b7280;">${fmtN(g.costTotal)}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;text-align:right;font-size:12px;color:#d97706;font-weight:700;">${pRate.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${subject}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans JP',sans-serif,sans-serif;background:#f0f2f5;padding:20px;color:#111;}
+.wrap{max-width:600px;margin:0 auto;}
+.hd{background:#2563eb;color:#fff;border-radius:12px 12px 0 0;padding:16px 20px;}
+.hd h1{font-size:18px;font-weight:700;}
+.hd p{font-size:12px;opacity:0.8;margin-top:4px;}
+.total-box{background:#ecfdf5;border:1.5px solid #059669;padding:14px 20px;display:flex;justify-content:space-between;align-items:baseline;}
+.total-label{font-size:13px;font-weight:700;color:#059669;}
+.total-val{font-size:28px;font-weight:700;color:#059669;font-family:monospace;}
+.total-val span{font-size:13px;color:#6b7280;margin-left:3px;}
+.profit-box{background:#fff7ed;border-top:1px solid #fed7aa;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;}
+.profit-label{font-size:12px;color:#d97706;font-weight:700;}
+.profit-val{font-size:15px;font-weight:700;color:#d97706;font-family:monospace;}
+.profit-rate{font-size:11px;color:#d97706;background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:2px 8px;margin-left:8px;}
+table{width:100%;border-collapse:collapse;background:#fff;}
+thead th{background:#f8fafc;padding:8px 14px;font-size:11px;color:#6b7280;font-weight:700;text-align:right;border-bottom:1.5px solid #e5e7eb;}
+thead th:first-child{text-align:left;}
+.footer{background:#fff;border-top:1px solid #e5e7eb;border-radius:0 0 12px 12px;padding:10px 20px;font-size:10px;color:#9ca3af;text-align:right;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hd">
+    <h1>${subject}</h1>
+    <p>${client?client+'　':''} ${date}</p>
+  </div>
+  <div class="total-box">
+    <div class="total-label">合計見積金額</div>
+    <div class="total-val">${fmtN(totalFinal)}<span>円</span></div>
+  </div>
+  <div class="profit-box">
+    <div class="profit-label">全体粗利</div>
+    <div style="display:flex;align-items:center;">
+      <div class="profit-val">${fmtN(profit)}</div>
+      <div class="profit-rate">${profitRate.toFixed(1)}%</div>
+    </div>
+  </div>
+  <table>
+    <thead><tr>
+      <th style="text-align:left;">品目</th>
+      <th>見積</th><th>原価</th><th>粗利</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">外構見積計算ツール　${date}</div>
+</div>
+</body></html>`;
+
+  // iOSはBlob downloadが動かないので同一ページ内に表示
+  const old=document.getElementById('saveOverlay');
+  if(old)old.remove();
+  const overlay=document.createElement('div');
+  overlay.id='saveOverlay';
+  overlay.style.cssText='position:fixed;inset:0;z-index:300;background:#fff;overflow-y:auto;';
+  overlay.innerHTML=`
+    <div style="display:flex;gap:8px;padding:12px 16px;background:#f8f8f8;border-bottom:1px solid #e5e7eb;position:sticky;top:0;">
+      <button onclick="document.getElementById('saveOverlay').remove();" style="flex:1;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;font-size:14px;cursor:pointer;">← 戻る</button>
+    </div>
+    <div style="padding:16px;max-width:600px;margin:0 auto;">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e40af;line-height:1.7;">
+        📱 保存するには：画面下の <strong>共有ボタン（□↑）</strong> →「ファイルに保存」<br>
+        💻 PCの場合：右クリック →「名前を付けて保存」
+      </div>
+      <div style="background:#2563eb;color:#fff;border-radius:12px 12px 0 0;padding:16px 20px;">
+        <div style="font-size:18px;font-weight:700;">${subject}</div>
+        <div style="font-size:12px;opacity:0.8;margin-top:4px;">${client?client+'　':''}${date}</div>
+      </div>
+      <div style="background:#ecfdf5;border:1.5px solid #059669;padding:14px 20px;display:flex;justify-content:space-between;align-items:baseline;">
+        <div style="font-size:13px;font-weight:700;color:#059669;">合計見積金額</div>
+        <div style="font-size:28px;font-weight:700;color:#059669;font-family:monospace;">${fmtN(totalFinal)}<span style="font-size:13px;color:#6b7280;margin-left:3px;">円</span></div>
+      </div>
+      <div style="background:#fff7ed;border-top:1px solid #fed7aa;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:12px;color:#d97706;font-weight:700;">全体粗利</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:15px;font-weight:700;color:#d97706;font-family:monospace;">${fmtN(profit)}</div>
+          <div style="font-size:11px;color:#d97706;background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:2px 8px;">${profitRate.toFixed(1)}%</div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;background:#fff;">
+        <thead><tr>
+          <th style="background:#f8fafc;padding:8px 14px;font-size:11px;color:#6b7280;font-weight:700;text-align:left;border-bottom:1.5px solid #e5e7eb;">品目</th>
+          <th style="background:#f8fafc;padding:8px 14px;font-size:11px;color:#6b7280;font-weight:700;text-align:right;border-bottom:1.5px solid #e5e7eb;">見積</th>
+          <th style="background:#f8fafc;padding:8px 14px;font-size:11px;color:#6b7280;font-weight:700;text-align:right;border-bottom:1.5px solid #e5e7eb;">原価</th>
+          <th style="background:#f8fafc;padding:8px 14px;font-size:11px;color:#6b7280;font-weight:700;text-align:right;border-bottom:1.5px solid #e5e7eb;">粗利</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="background:#fff;border-top:1px solid #e5e7eb;padding:10px 20px;font-size:10px;color:#9ca3af;text-align:right;">外構見積計算ツール　${date}</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.scrollTop=0;
+  closeSaveModal();
+}
+function openPdfModal(){
+  const today=new Date();
+  const el=document.getElementById('pdfDate');
+  if(!el.value)el.value=`令和${today.getFullYear()-2018}年${today.getMonth()+1}月${today.getDate()}日`;
+  document.getElementById('pdfModal').style.display='block';
+}
+function closePdfModal(){document.getElementById('pdfModal').style.display='none';}
+
+function genPdf(){
+  const gs=window.lastGroups;if(!gs)return;
+  const client=document.getElementById('pdfClient').value||'　';
+  const subject=document.getElementById('pdfSubject').value||'　';
+  const date=document.getElementById('pdfDate').value||'　';
+  const issuer='株式会社サクラ',addr='東京都文京区本駒込4－42－11　サクラ文京2F',tel='03(3828)4466',staff='平野 泰宏';
+  const totalFinal=gs.reduce((s,g)=>s+g.estFinal,0);
+  const fmtN=n=>Math.round(n).toLocaleString();
+
+  const tableRows=gs.map(g=>{
+    const qty=g.type==='fence'?g.m:g.qty;
+    const unit=g.type==='fence'?'m':(g.type==='foundation'?'個':g.unit);
+    const perUnit=g.type==='fence'?g.res.estPerM:g.estPerUnit;
+    const hinshuu = g.hinshuu || (g.type==='fence'?'メッシュフェンス':g.type==='foundation'?'独立基礎':g.title);
+    const naiyaku = g.naiyaku !== undefined ? g.naiyaku : '';
+    return `<tr>
+      <td>${hinshuu}</td>
+      <td>${naiyaku}</td>
+      <td class="num">${qty}</td><td class="center">${unit}</td>
+      <td class="num">${fmtN(perUnit)}</td>
+      <td class="num">${fmtN(g.estFinal)}</td><td></td>
+    </tr>`;
+  }).join('');
+
+  const old=document.getElementById('pdfOverlay');if(old)old.remove();
+  const overlay=document.createElement('div');
+  overlay.id='pdfOverlay';
+  overlay.style.cssText='position:fixed;inset:0;z-index:300;background:#fff;overflow-y:auto;font-family:"Noto Sans JP",sans-serif;font-size:11px;color:#111;';
+  overlay.innerHTML=`
+<style>
+#pdfOverlay h1{text-align:center;font-size:20px;font-weight:700;letter-spacing:0.4em;margin-bottom:12px;text-decoration:underline;}
+#pdfOverlay .top{display:flex;justify-content:space-between;margin-bottom:10px;gap:12px;}
+#pdfOverlay .po-client{font-size:18px;font-weight:700;border-bottom:2px solid #111;padding-bottom:3px;margin-bottom:4px;}
+#pdfOverlay .po-note{font-size:9px;color:#555;line-height:1.6;}
+#pdfOverlay .po-right{text-align:right;font-size:10px;line-height:1.9;flex-shrink:0;min-width:140px;}
+#pdfOverlay .po-issuer{font-size:13px;font-weight:700;}
+#pdfOverlay .sumrow{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee;font-size:10px;}
+#pdfOverlay .sumrow:first-child{border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:4px;}
+#pdfOverlay .bigamt{font-size:20px;font-weight:700;}
+#pdfOverlay table{width:100%;border-collapse:collapse;margin-top:10px;}
+#pdfOverlay th{background:#eee;border:1px solid #888;padding:4px 5px;text-align:center;font-size:10px;font-weight:700;}
+#pdfOverlay td{border:1px solid #bbb;padding:4px 5px;font-size:10px;}
+#pdfOverlay .num{text-align:right;}
+#pdfOverlay .center{text-align:center;}
+#pdfOverlay .foot td{background:#f5f5f5;font-weight:700;}
+#pdfOverlay .cond{margin-top:10px;border:1px solid #ccc;padding:6px 8px;}
+#pdfOverlay .cond p{font-size:9px;color:#444;line-height:1.7;}
+#pdfOverlay .cond p::before{content:'・';}
+#pdfOverlay .toolbar{display:flex;gap:10px;padding:12px 16px;background:#f8f8f8;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:10;}
+#pdfOverlay .body{padding:14px;}
+#pdfOverlay .hint{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin-top:12px;font-size:11px;color:#1e40af;line-height:1.7;text-align:center;}
+</style>
+<div class="toolbar">
+  <button onclick="document.getElementById('pdfOverlay').remove();" style="flex:1;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;font-size:14px;cursor:pointer;">← 戻る</button>
+</div>
+<div class="body">
+  <div style="text-align:right;font-size:9px;margin-bottom:2px;">No.1</div>
+  <h1>御 見 積 書</h1>
+  <div class="top">
+    <div>
+      <div style="font-size:11px;margin-bottom:6px;">${date}</div>
+      <div class="po-client">${client} 御中</div>
+      <div class="po-note">御照会に対し下記の通り御見積り致します。<br>何卒御用命の程願い申し上げます。<br>尚表示価格には消費税は含んでおりません。</div>
+    </div>
+    <div class="po-right">
+      <div>${addr}</div><div>TEL ${tel}</div>
+      <div class="po-issuer">${issuer}</div>
+      <div>担当：${staff}</div>
+    </div>
+  </div>
+  <div style="margin:8px 0 10px;font-size:10px;">
+    <div class="sumrow"><span style="letter-spacing:0.1em;">合　計　金　額</span><span class="bigamt">¥${fmtN(totalFinal)}－</span></div>
+    <div class="sumrow"><span>件　名</span><span>${subject}</span></div>
+    <div class="sumrow"><span>支　払　条　件</span><span>御打合せ</span></div>
+    <div class="sumrow"><span>受　渡　場　所</span><span>御打合せ</span></div>
+    <div class="sumrow"><span>納　　　　　期</span><span>御打合せ</span></div>
+    <div class="sumrow"><span>有　効　期　限</span><span>発行日より3ヶ月</span></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th style="width:28%">品種</th><th>内訳</th>
+      <th style="width:8%">員数</th><th style="width:6%">単位</th>
+      <th style="width:11%">単価</th><th style="width:12%">金額</th>
+      <th style="width:7%">備考</th>
+    </tr></thead>
+    <tbody>${tableRows}</tbody>
+    <tfoot><tr class="foot"><td colspan="5" class="center">計</td><td class="num">¥${fmtN(totalFinal)}</td><td></td></tr></tfoot>
+  </table>
+  <div class="cond">
+    <p>昼間一括施工として御見積りしております。</p>
+    <p>本御見積りは、コンクリートのハツリ、撤去、コア抜き、舗装カッター等の作業は含まれておりません。</p>
+    <p>本工事にて発生する産廃処分、発生材処分、梱包材、加工後の廃材等は、現場処分願います。</p>
+    <p>本工事の際に使用する資材及び工事車両置場の無償貸与をお願い致します。</p>
+    <p>交通誘導員、規制費、安全施設費等は、含まれておりません。</p>
+    <p>資材等の搬入は、4t車級での搬入可能として御見積りしております。</p>
+    <p>本御見積条件及び物価高騰による著しい価格変化が生じた場合は、別途再見積りとさせていただきます。</p>
+  </div>
+  <div class="hint">📄 PDFで保存するには<br>画面下の <strong>共有ボタン（□↑）</strong> をタップ →「PDFを作成」</div>
+</div>`;
+  document.body.appendChild(overlay);
+  overlay.scrollTop=0;
+  closePdfModal();
+}
+
+// ===== 初期化 =====
+renderMakerGrid();
+renderFenceFoundGrid();
+renderFoundOnlyGrid();
+</script>
+</body>
+</html>
