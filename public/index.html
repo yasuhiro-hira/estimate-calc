@@ -808,18 +808,19 @@ function saveEstimate(){
   closeSaveModal();
 
   const stateJson=JSON.stringify(gs).replace(/<\/script>/gi,'<\\/script>');
-  // 末尾の </body></html> だけを対象にする（JS内のテンプレート文字列の</body>と混同しないため）
-  const END_RE=/\n?<script>groups=\[[\s\S]*?<\/script>\n(<\/body>\n<\/html>)/;
-  const TAIL_RE=/(<\/body>\n<\/html>\s*)$/;
+  // 常にFirebaseのオリジンURLからクリーンなソースを取得する
+  // （file://で開いた保存ファイルからでも正しく動作するようにするため）
+  const ORIGIN_URL='https://estimate-calc-hirano.web.app/';
 
   function doDownload(src){
-    // 再保存時：既に注入されている古いstateを除去
-    src=src.replace(END_RE,'$1');
-    // 末尾に新しいstateを注入
-    let html=src
-      .replace(/<title>[^<]*<\/title>/,'<title>'+subject+'<\/title>')
-      .replace(TAIL_RE,'<script>groups='+stateJson+';renderGroups();<\/script>\n$1');
-    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    // 再保存時：前回注入したstateスクリプトを除去
+    src=src.replace(/<script id="saved-state">[\s\S]*?<\/script>\n?/,'');
+    // タイトル更新
+    src=src.replace(/<title>[^<]*<\/title>/,'<title>'+subject+'<\/title>');
+    // </html>直前に注入（ファイル内で一意な場所）
+    src=src.replace(/(<\/html>\s*)$/,
+      '<script id="saved-state">groups='+stateJson+';renderGroups();<\/script>\n$1');
+    const blob=new Blob([src],{type:'text/html;charset=utf-8'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url;
@@ -829,10 +830,11 @@ function saveEstimate(){
     URL.revokeObjectURL(url);
   }
 
-  fetch(location.href)
+  // file://から開いた場合でも常にFirebaseからクリーンなソースを取得
+  fetch(ORIGIN_URL)
     .then(r=>r.text())
     .then(src=>doDownload(src))
-    .catch(()=>doDownload('<!DOCTYPE html>\n'+document.documentElement.outerHTML));
+    .catch(()=>alert('保存に失敗しました。インターネット接続を確認してください。'));
 }
 function openPdfModal(){
   const today=new Date();
