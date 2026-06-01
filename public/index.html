@@ -913,7 +913,7 @@ function genPdf(){
   const totalFinal=gs.reduce((s,g)=>s+g.estFinal,0);
   const fmtN=n=>Math.round(n).toLocaleString();
 
-  const tableRows=gs.map(g=>{
+  const tableRows=gs.map((g,i)=>{
     const qty=g.type==='fence'?g.m:g.qty;
     const unit=g.type==='fence'?'m':(g.type==='foundation'?'個':g.unit);
     const perUnit=g.type==='fence'?g.res.estPerM:g.estPerUnit;
@@ -921,6 +921,7 @@ function genPdf(){
     const hinshuu=g.hinshuu||(g.type==='fence'?'メッシュフェンス':g.type==='foundation'?'独立基礎':g.title);
     const naiyaku=g.naiyaku!==undefined?g.naiyaku:'';
     return `<tr>
+      <td class="ctr">${i+1}</td>
       <td>${hinshuu}</td><td>${naiyaku}</td>
       <td class="num">${qty}</td><td class="ctr">${unit}</td>
       <td class="num">${fmtN(perUnit)}</td>
@@ -931,7 +932,7 @@ function genPdf(){
   const preTotalSum=gs.reduce((s,g)=>s+(g.type==='fence'?g.res.estTotal:g.estTotal),0);
   const discountTotal=preTotalSum-totalFinal;
   const discountRow=discountTotal>0?`<tr class="disc">
-    <td colspan="4" class="ctr">値　引　き</td><td></td>
+    <td colspan="5" class="ctr">値　引　き</td><td></td>
     <td class="num">－ ${fmtN(discountTotal)}</td><td></td>
   </tr>`:'';
 
@@ -1018,7 +1019,7 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
       <div class="co-name">${issuer}</div>
       <div class="co-staff">
         <span>担当：${staff}</span>
-        <span class="stamp">印</span>
+        <span class="stamp">平野</span>
       </div>
     </div>
   </div>
@@ -1038,8 +1039,9 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
   </div>
   <table>
     <thead><tr>
-      <th style="width:22%">品　種</th>
-      <th style="width:27%">内　訳</th>
+      <th style="width:4%">No.</th>
+      <th style="width:20%">品　種</th>
+      <th style="width:25%">内　訳</th>
       <th style="width:7%">員数</th>
       <th style="width:5%">単位</th>
       <th style="width:13%">単　価</th>
@@ -1049,12 +1051,12 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
     <tbody>${tableRows}</tbody>
     <tfoot>
       ${discountRow}
-      <tr><td colspan="5" class="ctr" style="letter-spacing:0.4em;">計</td>
+      <tr><td colspan="6" class="ctr" style="letter-spacing:0.4em;">計</td>
           <td class="num">¥&ensp;${fmtN(totalFinal)}</td><td></td></tr>
     </tfoot>
   </table>
   <div class="cond">
-    <div class="cond-ttl">≪ ご注意事項 ≫</div>
+    <div class="cond-ttl">≪ 見積条件 ≫</div>
     <p>昼間一括施工として御見積りしております。</p>
     <p>本御見積りは、コンクリートのハツリ、撤去、コア抜き、舗装カッター等の作業は含まれておりません。</p>
     <p>本工事にて発生する産廃処分、発生材処分、梱包材、加工後の廃材等は、現場処分願います。</p>
