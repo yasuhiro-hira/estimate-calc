@@ -75,6 +75,7 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
 .item-sum-name{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .item-sum-calc{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--accent);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .item-sum-profit{font-size:11px;color:var(--orange);font-weight:700;white-space:nowrap;flex-shrink:0;}
+.item-sum-edit{background:none;border:1px solid #93c5fd;border-radius:5px;color:var(--accent);font-size:11px;padding:3px 7px;cursor:pointer;flex-shrink:0;}
 .item-sum-del{background:none;border:1px solid #fca5a5;border-radius:5px;color:var(--red);font-size:11px;padding:3px 7px;cursor:pointer;flex-shrink:0;}
 .item-sum-arrow{font-size:12px;color:var(--text3);flex-shrink:0;transition:transform 0.2s;}
 .item-sum-arrow.open{transform:rotate(180deg);}
@@ -607,7 +608,7 @@ function addItem(){
       naiyaku:`□${selFoundOnly.name}`,
       title:`独立基礎 □${selFoundOnly.name}`,
       titleSub:`×${qty}個`,
-      qty, labor, mat, lab, cost,
+      qty, labor, mat, lab, cost, margin,
       estPerUnit, estTotal, discount, finalEst, profit, profitRate,
       estFinal:finalEst, costTotal:cost,
     });
@@ -634,7 +635,7 @@ function addItem(){
       hinshuu:name,
       naiyaku:'',
       title:name, titleSub:`×${qty}${unit}`,
-      costUnit, qty, unit, cost,
+      costUnit, qty, unit, cost, margin,
       estPerUnit, estTotal, discount, finalEst, profit, profitRate,
       estFinal:finalEst, costTotal:cost,
     });
@@ -720,6 +721,7 @@ function makeCard(g){
         <div class="item-sum-calc">${calcText}</div>
       </div>
       <div class="item-sum-profit">${profitText}</div>
+      <button class="item-sum-edit" onclick="event.stopPropagation();editGroup(${uid})">編集</button>
       <button class="item-sum-del" onclick="event.stopPropagation();delGroup(${uid})">削除</button>
       <div class="item-sum-arrow" id="arrow-${uid}">▼</div>
     </div>
@@ -739,6 +741,64 @@ function toggleDetail(id){
 
 function delGroup(id){groups=groups.filter(g=>g.id!==id);renderGroups();}
 function clearAll(){if(!confirm('全クリアしますか？'))return;groups=[];renderGroups();}
+
+function restoreMg(type,val){
+  const presets=[0,10,15,20,25,30];
+  if(presets.includes(Number(val))){setMg(type,Number(val));}
+  else{
+    mg[type]=Number(val)||0;
+    document.querySelectorAll(`#${type}MgBtns .mg-btn`).forEach(b=>b.classList.remove('active'));
+    document.getElementById(type+'MgCustom').value=val||'';
+  }
+}
+
+function editGroup(id){
+  const g=groups.find(x=>x.id===id);
+  if(!g)return;
+  // いったん削除してフォームに復元
+  groups=groups.filter(x=>x.id!==id);
+  renderGroups();
+
+  if(g.type==='fence'){
+    switchTab('fence');
+    selMaker=g.fence.maker; selSeries=g.fence.series; selFence=g.fence;
+    renderMakerGrid(); renderSeriesGrid(); renderHeightGrid();
+    document.getElementById('step-series').classList.add('show');
+    document.getElementById('step-height').classList.add('show');
+    document.getElementById('step-m').classList.add('show');
+    document.getElementById('fenceM').value=g.m;
+    document.getElementById('fenceLabor').value=Math.round(g.fenceLaborPerM/1.15);
+    updateFenceLaborHint();
+    setFoundOpt(g.withFound);
+    if(g.withFound){
+      selFenceFound=FOUND_MASTER.find(f=>f.name===g.foundName)||null;
+      renderFenceFoundGrid();
+      document.getElementById('foundLabor').value=Math.round(g.foundLabor/1.15);
+      updateFoundLaborHint();
+      updateFoundHint();
+    }
+    restoreMg('fence',g.margin);
+  }
+  else if(g.type==='foundation'){
+    switchTab('foundation');
+    selFoundOnly=FOUND_MASTER.find(f=>f.name===g.naiyaku.replace('□',''))||null;
+    renderFoundOnlyGrid();
+    document.getElementById('step-found-only').classList.add('show');
+    document.getElementById('foundQty').value=g.qty;
+    document.getElementById('foundOnlyLabor').value=Math.round(g.labor/1.15);
+    updateFoundOnlyLaborHint();
+    restoreMg('found',g.margin||0);
+  }
+  else if(g.type==='custom'){
+    switchTab('custom');
+    document.getElementById('customName').value=g.hinshuu;
+    document.getElementById('customCost').value=g.costUnit;
+    document.getElementById('customQty').value=g.qty;
+    document.getElementById('customUnit').value=g.unit;
+    restoreMg('custom',g.margin||0);
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 
 function resetToTop(){
   const safe=(id,fn)=>{const el=document.getElementById(id);if(el)fn(el);};
@@ -857,6 +917,7 @@ function genPdf(){
     const qty=g.type==='fence'?g.m:g.qty;
     const unit=g.type==='fence'?'m':(g.type==='foundation'?'個':g.unit);
     const perUnit=g.type==='fence'?g.res.estPerM:g.estPerUnit;
+    const estTotal=g.type==='fence'?g.res.estTotal:g.estTotal; // 値引前の金額
     const hinshuu = g.hinshuu || (g.type==='fence'?'メッシュフェンス':g.type==='foundation'?'独立基礎':g.title);
     const naiyaku = g.naiyaku !== undefined ? g.naiyaku : '';
     return `<tr>
@@ -864,9 +925,17 @@ function genPdf(){
       <td>${naiyaku}</td>
       <td class="num">${qty}</td><td class="center">${unit}</td>
       <td class="num">${fmtN(perUnit)}</td>
-      <td class="num">${fmtN(g.estFinal)}</td><td></td>
+      <td class="num">${fmtN(estTotal)}</td><td></td>
     </tr>`;
   }).join('');
+
+  // 値引き計算（品目合計 - 万円切り捨て後の合計）
+  const preTotalSum=gs.reduce((s,g)=>s+(g.type==='fence'?g.res.estTotal:g.estTotal),0);
+  const discountTotal=preTotalSum-totalFinal;
+  const discountRow=discountTotal>0?`<tr>
+    <td colspan="4" class="center">値　引　き</td><td></td>
+    <td class="num">－${fmtN(discountTotal)}</td><td></td>
+  </tr>`:'';
 
   const old=document.getElementById('pdfOverlay');if(old)old.remove();
   const overlay=document.createElement('div');
@@ -930,7 +999,10 @@ function genPdf(){
       <th style="width:7%">備考</th>
     </tr></thead>
     <tbody>${tableRows}</tbody>
-    <tfoot><tr class="foot"><td colspan="5" class="center">計</td><td class="num">¥${fmtN(totalFinal)}</td><td></td></tr></tfoot>
+    <tfoot>
+      ${discountRow}
+      <tr class="foot"><td colspan="5" class="center">計</td><td class="num">¥${fmtN(totalFinal)}</td><td></td></tr>
+    </tfoot>
   </table>
   <div class="cond">
     <p>昼間一括施工として御見積りしております。</p>
