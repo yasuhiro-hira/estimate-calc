@@ -910,7 +910,6 @@ function genPdf(){
   const subject=document.getElementById('pdfSubject').value||'　';
   const date=document.getElementById('pdfDate').value||'　';
   const issuer='株式会社サクラ',addr='東京都文京区本駒込4－42－11　サクラ文京2F',tel='03(3828)4466',staff='平野 泰宏';
-  const totalFinal=gs.reduce((s,g)=>s+g.estFinal,0);
   const fmtN=n=>Math.round(n).toLocaleString();
 
   const tableRows=gs.map((g,i)=>{
@@ -930,7 +929,8 @@ function genPdf(){
   }).join('');
 
   const preTotalSum=gs.reduce((s,g)=>s+(g.type==='fence'?g.res.estTotal:g.estTotal),0);
-  const discountTotal=preTotalSum-totalFinal;
+  const pdfFinal=Math.floor(preTotalSum/10000)*10000; // 合計を万円切り捨て
+  const discountTotal=preTotalSum-pdfFinal;
   const discountRow=discountTotal>0?`<tr class="disc">
     <td colspan="5" class="ctr">値　引　き</td><td></td>
     <td class="num">－ ${fmtN(discountTotal)}</td><td></td>
@@ -1026,7 +1026,7 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
   <div class="sumbox">
     <div class="sumbox-top">
       <span class="sumbox-lbl">合　計　金　額（税抜）</span>
-      <span class="sumbox-amt">¥&ensp;${fmtN(totalFinal)}&ensp;円</span>
+      <span class="sumbox-amt">¥&ensp;${fmtN(pdfFinal)}&ensp;円</span>
     </div>
     <div class="sumbox-grid">
       <div class="sg-item"><span class="sg-lbl">件　名</span><span class="sg-val">${subject}</span></div>
@@ -1052,7 +1052,7 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
     <tfoot>
       ${discountRow}
       <tr><td colspan="6" class="ctr" style="letter-spacing:0.4em;">計</td>
-          <td class="num">¥&ensp;${fmtN(totalFinal)}</td><td></td></tr>
+          <td class="num">¥&ensp;${fmtN(pdfFinal)}</td><td></td></tr>
     </tfoot>
   </table>
   <div class="cond">
