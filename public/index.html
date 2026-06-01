@@ -807,23 +807,37 @@ function saveEstimate(){
   const subject=document.getElementById('saveSubject').value||'見積';
   closeSaveModal();
 
-  // ページ全体のHTMLを取得し、品目データを埋め込んで保存
-  let html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
-  html=html.replace(/<title>[^<]*<\/title>/,'<title>'+subject+'<\/title>');
   const stateJson=JSON.stringify(gs).replace(/<\/script>/gi,'<\\/script>');
-  // 既存の初期化コードの直後に品目を復元するスクリプトを注入
-  html=html.replace('</body>',
-    '<script>groups='+stateJson+';renderGroups();<\/script>\n</body>');
+  const injectScript='<script>groups='+stateJson+';renderGroups();<\/script>\n</body>';
 
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download='見積_'+subject+'.html';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  function doDownload(src){
+    let html=src
+      .replace(/<title>[^<]*<\/title>/,'<title>'+subject+'<\/title>')
+      .replace('</body>',injectScript);
+    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='見積_'+subject+'.html';
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // サーバーから元のクリーンなソースを取得して状態を注入
+  fetch(location.href)
+    .then(r=>r.text())
+    .then(src=>{
+      // 既に埋め込まれた古いstateを除去してから注入（再保存時の二重注入防止）
+      src=src.replace(/<script>groups=\[[\s\S]*?<\/script>\n<\/body>/,'</body>');
+      doDownload(src);
+    })
+    .catch(()=>{
+      // file://で開いた場合などfetchが失敗したときのフォールバック
+      let src='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+      src=src.replace(/<script>groups=\[[\s\S]*?<\/script>\n<\/body>/,'</body>');
+      doDownload(src);
+    });
 }
 function openPdfModal(){
   const today=new Date();
