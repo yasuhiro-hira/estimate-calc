@@ -917,94 +917,144 @@ function genPdf(){
     const qty=g.type==='fence'?g.m:g.qty;
     const unit=g.type==='fence'?'m':(g.type==='foundation'?'個':g.unit);
     const perUnit=g.type==='fence'?g.res.estPerM:g.estPerUnit;
-    const estTotal=g.type==='fence'?g.res.estTotal:g.estTotal; // 値引前の金額
-    const hinshuu = g.hinshuu || (g.type==='fence'?'メッシュフェンス':g.type==='foundation'?'独立基礎':g.title);
-    const naiyaku = g.naiyaku !== undefined ? g.naiyaku : '';
+    const estTotal=g.type==='fence'?g.res.estTotal:g.estTotal;
+    const hinshuu=g.hinshuu||(g.type==='fence'?'メッシュフェンス':g.type==='foundation'?'独立基礎':g.title);
+    const naiyaku=g.naiyaku!==undefined?g.naiyaku:'';
     return `<tr>
-      <td>${hinshuu}</td>
-      <td>${naiyaku}</td>
-      <td class="num">${qty}</td><td class="center">${unit}</td>
+      <td>${hinshuu}</td><td>${naiyaku}</td>
+      <td class="num">${qty}</td><td class="ctr">${unit}</td>
       <td class="num">${fmtN(perUnit)}</td>
       <td class="num">${fmtN(estTotal)}</td><td></td>
     </tr>`;
   }).join('');
 
-  // 値引き計算（品目合計 - 万円切り捨て後の合計）
   const preTotalSum=gs.reduce((s,g)=>s+(g.type==='fence'?g.res.estTotal:g.estTotal),0);
   const discountTotal=preTotalSum-totalFinal;
-  const discountRow=discountTotal>0?`<tr>
-    <td colspan="4" class="center">値　引　き</td><td></td>
-    <td class="num">－${fmtN(discountTotal)}</td><td></td>
+  const discountRow=discountTotal>0?`<tr class="disc">
+    <td colspan="4" class="ctr">値　引　き</td><td></td>
+    <td class="num">－ ${fmtN(discountTotal)}</td><td></td>
   </tr>`:'';
 
-  const old=document.getElementById('pdfOverlay');if(old)old.remove();
-  const overlay=document.createElement('div');
-  overlay.id='pdfOverlay';
-  overlay.style.cssText='position:fixed;inset:0;z-index:300;background:#fff;overflow-y:auto;font-family:"Noto Sans JP",sans-serif;font-size:11px;color:#111;';
-  overlay.innerHTML=`
+  const w=window.open('','_blank','width=900,height=1100');
+  w.document.write(`<!DOCTYPE html><html lang="ja"><head>
+<meta charset="utf-8">
+<title>御見積書</title>
 <style>
-#pdfOverlay h1{text-align:center;font-size:20px;font-weight:700;letter-spacing:0.4em;margin-bottom:12px;text-decoration:underline;}
-#pdfOverlay .top{display:flex;justify-content:space-between;margin-bottom:10px;gap:12px;}
-#pdfOverlay .po-client{font-size:18px;font-weight:700;border-bottom:2px solid #111;padding-bottom:3px;margin-bottom:4px;}
-#pdfOverlay .po-note{font-size:9px;color:#555;line-height:1.6;}
-#pdfOverlay .po-right{text-align:right;font-size:10px;line-height:1.9;flex-shrink:0;min-width:140px;}
-#pdfOverlay .po-issuer{font-size:13px;font-weight:700;}
-#pdfOverlay .sumrow{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee;font-size:10px;}
-#pdfOverlay .sumrow:first-child{border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:4px;}
-#pdfOverlay .bigamt{font-size:20px;font-weight:700;}
-#pdfOverlay table{width:100%;border-collapse:collapse;margin-top:10px;}
-#pdfOverlay th{background:#eee;border:1px solid #888;padding:4px 5px;text-align:center;font-size:10px;font-weight:700;}
-#pdfOverlay td{border:1px solid #bbb;padding:4px 5px;font-size:10px;}
-#pdfOverlay .num{text-align:right;}
-#pdfOverlay .center{text-align:center;}
-#pdfOverlay .foot td{background:#f5f5f5;font-weight:700;}
-#pdfOverlay .cond{margin-top:10px;border:1px solid #ccc;padding:6px 8px;}
-#pdfOverlay .cond p{font-size:9px;color:#444;line-height:1.7;}
-#pdfOverlay .cond p::before{content:'・';}
-#pdfOverlay .toolbar{display:flex;gap:10px;padding:12px 16px;background:#f8f8f8;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:10;}
-#pdfOverlay .body{padding:14px;}
-#pdfOverlay .hint{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin-top:12px;font-size:11px;color:#1e40af;line-height:1.7;text-align:center;}
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+@page{size:A4 portrait;margin:10mm 12mm;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans JP',sans-serif;font-size:10pt;color:#111;background:#fff;}
+
+.toolbar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:#f3f4f6;border-bottom:1px solid #d1d5db;}
+.toolbar .btn-p{padding:7px 20px;background:#1d4ed8;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;}
+.toolbar .btn-c{padding:7px 16px;background:#fff;border:1.5px solid #9ca3af;border-radius:6px;font-size:13px;cursor:pointer;}
+.toolbar .hint{font-size:10px;color:#6b7280;margin-left:6px;}
+@media print{.toolbar{display:none!important;}}
+
+.page{padding:4mm 2mm 2mm;}
+
+/* title */
+.doc-title{text-align:center;font-size:22pt;font-weight:700;letter-spacing:0.6em;border-bottom:2.5px double #111;padding-bottom:4pt;margin-bottom:8pt;}
+
+/* header */
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6pt;}
+.hdr-left{flex:1;}
+.cli-date{font-size:9pt;margin-bottom:5pt;}
+.cli-name{font-size:17pt;font-weight:700;border-bottom:2px solid #111;display:inline-block;padding-bottom:2pt;margin-bottom:4pt;min-width:260px;}
+.cli-note{font-size:8pt;color:#555;line-height:1.8;}
+.hdr-right{border:1px solid #aaa;padding:6pt 10pt;text-align:right;min-width:210px;flex-shrink:0;}
+.co-addr{font-size:8.5pt;line-height:1.7;margin-bottom:3pt;}
+.co-name{font-size:13pt;font-weight:700;border-bottom:1px solid #111;padding-bottom:2pt;margin-bottom:4pt;}
+.co-staff{display:flex;align-items:center;justify-content:flex-end;gap:10px;font-size:9pt;}
+.stamp{width:32px;height:32px;border:1.5px solid #bbb;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:7pt;color:#bbb;flex-shrink:0;}
+
+/* summary */
+.sumbox{border:1.5px solid #111;margin-bottom:7pt;}
+.sumbox-top{display:flex;justify-content:space-between;align-items:center;padding:5pt 10pt;border-bottom:1px solid #ccc;background:#f7f7f7;}
+.sumbox-lbl{font-size:10pt;font-weight:700;letter-spacing:0.15em;}
+.sumbox-amt{font-size:17pt;font-weight:700;letter-spacing:0.05em;}
+.sumbox-grid{display:grid;grid-template-columns:repeat(3,1fr);}
+.sg-item{padding:3pt 8pt;font-size:8.5pt;border-top:1px solid #ddd;border-right:1px solid #ddd;}
+.sg-item:nth-child(3n){border-right:none;}
+.sg-lbl{color:#777;font-size:7.5pt;display:block;margin-bottom:1pt;}
+.sg-val{font-weight:700;}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:5pt;}
+thead th{background:#e5e7eb;border:1px solid #888;padding:3.5pt 5pt;text-align:center;font-weight:700;font-size:8.5pt;}
+tbody td{border:1px solid #ccc;padding:3pt 5pt;}
+tbody tr:nth-child(even) td{background:#fafafa;}
+tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:700;font-size:9.5pt;}
+.disc td{background:#fff9f0!important;}
+.num{text-align:right;}
+.ctr{text-align:center;}
+
+/* conditions */
+.cond{border:1px solid #ccc;padding:4pt 7pt;}
+.cond-ttl{font-size:8pt;font-weight:700;border-bottom:1px solid #ddd;padding-bottom:2pt;margin-bottom:3pt;}
+.cond p{font-size:7.5pt;color:#444;line-height:1.65;}
+.cond p::before{content:'・';}
 </style>
+</head><body>
 <div class="toolbar">
-  <button onclick="document.getElementById('pdfOverlay').remove();" style="flex:1;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;font-size:14px;cursor:pointer;">← 戻る</button>
+  <button class="btn-p" onclick="window.print()">🖨　印刷 / PDF保存</button>
+  <button class="btn-c" onclick="window.close()">✕ 閉じる</button>
+  <span class="hint">印刷設定 → 用紙：A4 ／ 余白：最小 ／ ヘッダー・フッター：オフ</span>
 </div>
-<div class="body">
-  <div style="text-align:right;font-size:9px;margin-bottom:2px;">No.1</div>
-  <h1>御 見 積 書</h1>
-  <div class="top">
-    <div>
-      <div style="font-size:11px;margin-bottom:6px;">${date}</div>
-      <div class="po-client">${client} 御中</div>
-      <div class="po-note">御照会に対し下記の通り御見積り致します。<br>何卒御用命の程願い申し上げます。<br>尚表示価格には消費税は含んでおりません。</div>
+<div class="page">
+  <div style="text-align:right;font-size:8pt;margin-bottom:2pt;color:#666;">No.&emsp;&emsp;</div>
+  <div class="doc-title">御　見　積　書</div>
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="cli-date">${date}</div>
+      <div class="cli-name">${client}&ensp;御中</div>
+      <div class="cli-note">
+        下記の通り御見積り申し上げます。<br>
+        ※ 表示価格には消費税は含まれておりません。
+      </div>
     </div>
-    <div class="po-right">
-      <div>${addr}</div><div>TEL ${tel}</div>
-      <div class="po-issuer">${issuer}</div>
-      <div>担当：${staff}</div>
+    <div class="hdr-right">
+      <div class="co-addr">${addr}<br>TEL：${tel}</div>
+      <div class="co-name">${issuer}</div>
+      <div class="co-staff">
+        <span>担当：${staff}</span>
+        <span class="stamp">印</span>
+      </div>
     </div>
   </div>
-  <div style="margin:8px 0 10px;font-size:10px;">
-    <div class="sumrow"><span style="letter-spacing:0.1em;">合　計　金　額</span><span class="bigamt">¥${fmtN(totalFinal)}－</span></div>
-    <div class="sumrow"><span>件　名</span><span>${subject}</span></div>
-    <div class="sumrow"><span>支　払　条　件</span><span>御打合せ</span></div>
-    <div class="sumrow"><span>受　渡　場　所</span><span>御打合せ</span></div>
-    <div class="sumrow"><span>納　　　　　期</span><span>御打合せ</span></div>
-    <div class="sumrow"><span>有　効　期　限</span><span>発行日より3ヶ月</span></div>
+  <div class="sumbox">
+    <div class="sumbox-top">
+      <span class="sumbox-lbl">合　計　金　額（税抜）</span>
+      <span class="sumbox-amt">¥&ensp;${fmtN(totalFinal)}&ensp;円</span>
+    </div>
+    <div class="sumbox-grid">
+      <div class="sg-item"><span class="sg-lbl">件　名</span><span class="sg-val">${subject}</span></div>
+      <div class="sg-item"><span class="sg-lbl">支払条件</span><span class="sg-val">御打合せ</span></div>
+      <div class="sg-item"><span class="sg-lbl">受渡場所</span><span class="sg-val">御打合せ</span></div>
+      <div class="sg-item"><span class="sg-lbl">納　　期</span><span class="sg-val">御打合せ</span></div>
+      <div class="sg-item"><span class="sg-lbl">有効期限</span><span class="sg-val">発行日より3ヶ月</span></div>
+      <div class="sg-item"><span class="sg-lbl">備　　考</span><span class="sg-val">&emsp;</span></div>
+    </div>
   </div>
   <table>
     <thead><tr>
-      <th style="width:28%">品種</th><th>内訳</th>
-      <th style="width:8%">員数</th><th style="width:6%">単位</th>
-      <th style="width:11%">単価</th><th style="width:12%">金額</th>
-      <th style="width:7%">備考</th>
+      <th style="width:22%">品　種</th>
+      <th style="width:27%">内　訳</th>
+      <th style="width:7%">員数</th>
+      <th style="width:5%">単位</th>
+      <th style="width:13%">単　価</th>
+      <th style="width:14%">金　額</th>
+      <th style="width:12%">備　考</th>
     </tr></thead>
     <tbody>${tableRows}</tbody>
     <tfoot>
       ${discountRow}
-      <tr class="foot"><td colspan="5" class="center">計</td><td class="num">¥${fmtN(totalFinal)}</td><td></td></tr>
+      <tr><td colspan="5" class="ctr" style="letter-spacing:0.4em;">計</td>
+          <td class="num">¥&ensp;${fmtN(totalFinal)}</td><td></td></tr>
     </tfoot>
   </table>
   <div class="cond">
+    <div class="cond-ttl">≪ ご注意事項 ≫</div>
     <p>昼間一括施工として御見積りしております。</p>
     <p>本御見積りは、コンクリートのハツリ、撤去、コア抜き、舗装カッター等の作業は含まれておりません。</p>
     <p>本工事にて発生する産廃処分、発生材処分、梱包材、加工後の廃材等は、現場処分願います。</p>
@@ -1013,10 +1063,9 @@ function genPdf(){
     <p>資材等の搬入は、4t車級での搬入可能として御見積りしております。</p>
     <p>本御見積条件及び物価高騰による著しい価格変化が生じた場合は、別途再見積りとさせていただきます。</p>
   </div>
-  <div class="hint">📄 PDFで保存するには<br>画面下の <strong>共有ボタン（□↑）</strong> をタップ →「PDFを作成」</div>
-</div>`;
-  document.body.appendChild(overlay);
-  overlay.scrollTop=0;
+</div>
+</body></html>`);
+  w.document.close();
   closePdfModal();
 }
 
