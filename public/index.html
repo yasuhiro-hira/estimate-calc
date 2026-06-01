@@ -805,139 +805,25 @@ function saveEstimate(){
   const gs=window.lastGroups;
   if(!gs||gs.length===0){alert('品目がありません');return;}
   const subject=document.getElementById('saveSubject').value||'見積';
-  const client =document.getElementById('saveClient').value||'';
-  const date   =document.getElementById('saveDate').value||'';
-  const totalFinal=gs.reduce((s,g)=>s+g.estFinal,0);
-  const totalCost =gs.reduce((s,g)=>s+g.costTotal,0);
-  const profit=totalFinal-totalCost;
-  const profitRate=totalFinal>0?profit/totalFinal*100:0;
-  const fmtN=n=>Math.round(n).toLocaleString();
+  closeSaveModal();
 
-  const itemBlocks=gs.map(g=>{
-    const fmt2=n=>'¥'+Math.round(n).toLocaleString();
-    let calcStr='', pRate=0, detailRows='';
+  // ページ全体のHTMLを取得し、品目データを埋め込んで保存
+  let html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  html=html.replace(/<title>[^<]*<\/title>/,'<title>'+subject+'<\/title>');
+  const stateJson=JSON.stringify(gs).replace(/<\/script>/gi,'<\\/script>');
+  // 既存の初期化コードの直後に品目を復元するスクリプトを注入
+  html=html.replace('</body>',
+    '<script>groups='+stateJson+';renderGroups();<\/script>\n</body>');
 
-    if(g.type==='fence'){
-      const r=g.res;
-      const shikiri=Math.round(g.fence.price*(g.fence.rate/100));
-      calcStr=`¥${r.estPerM.toLocaleString()} × ${g.m}m = ¥${r.estTotal.toLocaleString()}`;
-      pRate=r.profitRate;
-      detailRows=`
-        <tr><td class="dl">材料費（仕切 ¥${shikiri.toLocaleString()}/m × ${g.m}m）</td><td class="dr">${fmt2(r.fence.mat)}</td></tr>
-        <tr><td class="dl">材料ロス（5%）</td><td class="dr">${fmt2(r.fence.loss)}</td></tr>
-        <tr><td class="dl">施工費（¥${g.fenceLaborPerM.toLocaleString()}/m × ${g.m}m）</td><td class="dr">${fmt2(r.fence.lab)}</td></tr>
-        ${g.withFound?`
-        <tr><td class="dl sep" colspan="2">独立基礎 □${g.foundName} ×${g.foundQty}個</td></tr>
-        <tr><td class="dl">材料費（仕切価格）</td><td class="dr">${fmt2(r.found.mat)}</td></tr>
-        <tr><td class="dl">施工費（¥${g.foundLabor.toLocaleString()}/個）</td><td class="dr">${fmt2(r.found.lab)}</td></tr>`:''}
-        <tr class="cost-total"><td class="dl">合計原価　¥${Math.round(r.totalCost/g.m).toLocaleString()}/m</td><td class="dr">${fmt2(r.totalCost)}</td></tr>`;
-    } else if(g.type==='foundation'){
-      calcStr=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}個 = ¥${g.finalEst.toLocaleString()}`;
-      pRate=g.profitRate;
-      detailRows=`
-        <tr><td class="dl">材料費（仕切価格）</td><td class="dr">${fmt2(g.mat)}</td></tr>
-        <tr><td class="dl">施工費（¥${g.labor.toLocaleString()}/個）</td><td class="dr">${fmt2(g.lab)}</td></tr>
-        <tr class="cost-total"><td class="dl">合計原価</td><td class="dr">${fmt2(g.cost)}</td></tr>`;
-    } else {
-      calcStr=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}${g.unit}`;
-      pRate=g.profitRate;
-      detailRows=`
-        <tr><td class="dl">¥${g.costUnit.toLocaleString()}/${g.unit} × ${g.qty}${g.unit}</td><td class="dr">${fmt2(g.cost)}</td></tr>
-        <tr class="cost-total"><td class="dl">合計原価</td><td class="dr">${fmt2(g.cost)}</td></tr>`;
-    }
-
-    return `
-    <div class="item-block">
-      <div class="item-hd">
-        <div>
-          <div class="item-name">${g.title} ${g.titleSub}</div>
-          <div class="item-calc">${calcStr}</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div class="item-est">${fmtN(g.estFinal)}<span style="font-size:11px;color:#6b7280;margin-left:2px;">円</span></div>
-          <div class="item-profit">原価 ${fmtN(g.costTotal)}　粗利 ${pRate.toFixed(1)}%</div>
-        </div>
-      </div>
-      <table class="detail-table">
-        <thead><tr><th style="text-align:left;">原価内訳</th><th style="text-align:right;">金額</th></tr></thead>
-        <tbody>${detailRows}</tbody>
-      </table>
-    </div>`;
-  }).join('');
-
-  const html=`<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${subject}</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Noto Sans JP',sans-serif;background:#f0f2f5;padding:20px;color:#111827;}
-.wrap{max-width:640px;margin:0 auto;}
-.hd{background:#2563eb;color:#fff;border-radius:12px 12px 0 0;padding:16px 20px;}
-.hd h1{font-size:18px;font-weight:700;}
-.hd p{font-size:12px;opacity:0.8;margin-top:3px;}
-.total-box{background:#ecfdf5;border:1.5px solid #059669;padding:14px 20px;display:flex;justify-content:space-between;align-items:baseline;}
-.total-label{font-size:13px;font-weight:700;color:#059669;}
-.total-val{font-size:28px;font-weight:700;color:#059669;font-family:'JetBrains Mono',monospace;}
-.total-val span{font-size:13px;color:#6b7280;margin-left:3px;}
-.profit-box{background:#fff7ed;border-top:1px solid #fed7aa;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;}
-.profit-label{font-size:12px;color:#d97706;font-weight:700;}
-.profit-val{font-size:15px;font-weight:700;color:#d97706;font-family:'JetBrains Mono',monospace;}
-.profit-rate{font-size:11px;color:#d97706;background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:2px 8px;margin-left:8px;}
-.items-wrap{margin-top:12px;display:flex;flex-direction:column;gap:10px;}
-.item-block{background:#fff;border:1px solid #e2e6ea;border-radius:10px;overflow:hidden;}
-.item-hd{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 14px;gap:12px;}
-.item-name{font-size:13px;font-weight:700;}
-.item-calc{font-size:12px;color:#2563eb;font-family:'JetBrains Mono',monospace;margin-top:3px;}
-.item-est{font-size:16px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right;}
-.item-profit{font-size:11px;color:#d97706;margin-top:2px;text-align:right;}
-.detail-table{width:100%;border-collapse:collapse;border-top:1px solid #e2e6ea;}
-.detail-table th{background:#f8fafc;padding:5px 14px;font-size:10px;color:#9ca3af;font-weight:700;border-bottom:1px solid #e2e6ea;}
-.detail-table td{padding:5px 14px;font-size:11px;border-top:1px solid #f0f2f5;}
-.dl{color:#6b7280;}
-.dr{text-align:right;font-family:'JetBrains Mono',monospace;color:#6b7280;}
-.sep{background:#f8fafc;color:#9ca3af;font-size:10px;font-weight:700;padding:3px 14px !important;}
-.cost-total td{background:#ecfdf5;border-top:1.5px solid #059669 !important;color:#059669;font-weight:700;}
-.cost-total .dr{font-family:'JetBrains Mono',monospace;}
-.footer{background:#fff;border:1px solid #e2e6ea;border-radius:10px;margin-top:10px;padding:10px 16px;font-size:10px;color:#9ca3af;text-align:right;}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="hd">
-    <h1>${subject}</h1>
-    <p>${[client,date].filter(Boolean).join('　')}</p>
-  </div>
-  <div class="total-box">
-    <div class="total-label">合計見積金額</div>
-    <div class="total-val">${fmtN(totalFinal)}<span>円</span></div>
-  </div>
-  <div class="profit-box">
-    <div class="profit-label">全体粗利</div>
-    <div style="display:flex;align-items:center;">
-      <div class="profit-val">${fmtN(profit)}</div>
-      <div class="profit-rate">${profitRate.toFixed(1)}%</div>
-    </div>
-  </div>
-  <div class="items-wrap">${itemBlocks}</div>
-  <div class="footer">外構見積計算ツール　${date}</div>
-</div>
-</body></html>`;
-
-  // HTMLファイルとしてダウンロード
-  const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = '見積_' + subject + '.html';
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='見積_'+subject+'.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  closeSaveModal();
 }
 function openPdfModal(){
   const today=new Date();
