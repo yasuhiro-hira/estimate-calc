@@ -877,9 +877,9 @@ function saveEstimate(){
     src=src.replace(/<script id="saved-state"[^>]*>[\s\S]*?<\/script>\n?/,'');
     // タイトル更新
     src=src.replace(/<title>[^<]*<\/title>/,'<title>'+subject+'<\/title>');
-    // </html>直前にJSONデータとして注入（ブラウザが自動実行しないtype指定）
-    src=src.replace(/(<\/html>\s*)$/,
-      '<script id="saved-state" type="application/json">'+stateJson+'<\/script>\n$1');
+    // </head>直前にJSONデータとして注入（メインスクリプトより先に解析されDOMに入る）
+    src=src.replace(/<\/head>/,
+      '<script id="saved-state" type="application/json">'+stateJson+'<\/script>\n</head>');
     const blob=new Blob([src],{type:'text/html;charset=utf-8'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -1088,8 +1088,8 @@ renderFenceFoundGrid();
 renderFoundOnlyGrid();
 
 // 保存ファイルから開いた場合の状態復元
-// DOMContentLoadedで全HTML解析後に実行（saved-stateタグが確実にDOM上にある）
-document.addEventListener('DOMContentLoaded',function(){
+// saved-stateは</head>内に注入されるため、body末尾のこのスクリプト実行時には既にDOM上にある
+(function(){
   const el=document.getElementById('saved-state');
   if(!el)return;
   try{
@@ -1099,7 +1099,7 @@ document.addEventListener('DOMContentLoaded',function(){
       renderGroups();
     }
   }catch(e){console.error('State restore failed:',e);}
-});
+})();
 </script>
 </body>
 </html>
