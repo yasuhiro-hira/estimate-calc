@@ -873,13 +873,13 @@ function saveEstimate(){
   const ORIGIN_URL='https://estimate-calc-hirano.web.app/';
 
   function doDownload(src){
-    // 再保存時：前回注入したstateスクリプトを除去
-    src=src.replace(/<script id="saved-state">[\s\S]*?<\/script>\n?/,'');
+    // 再保存時：前回注入したstateスクリプトを除去（両フォーマット対応）
+    src=src.replace(/<script id="saved-state"[^>]*>[\s\S]*?<\/script>\n?/,'');
     // タイトル更新
     src=src.replace(/<title>[^<]*<\/title>/,'<title>'+subject+'<\/title>');
-    // </html>直前に注入（ファイル内で一意な場所）
+    // </html>直前にJSONデータとして注入（ブラウザが自動実行しないtype指定）
     src=src.replace(/(<\/html>\s*)$/,
-      '<script id="saved-state">groups='+stateJson+';renderGroups();<\/script>\n$1');
+      '<script id="saved-state" type="application/json">'+stateJson+'<\/script>\n$1');
     const blob=new Blob([src],{type:'text/html;charset=utf-8'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -1086,6 +1086,19 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
 renderMakerGrid();
 renderFenceFoundGrid();
 renderFoundOnlyGrid();
+
+// 保存ファイルから開いた場合の状態復元
+(function(){
+  const el=document.getElementById('saved-state');
+  if(!el)return;
+  try{
+    const saved=JSON.parse(el.textContent);
+    if(Array.isArray(saved)&&saved.length>0){
+      groups=saved;
+      renderGroups();
+    }
+  }catch(e){console.error('State restore failed:',e);}
+})();
 </script>
 </body>
 </html>
