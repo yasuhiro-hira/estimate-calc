@@ -891,7 +891,8 @@ function saveEstimate(){
   }
 
   // file://から開いた場合でも常にFirebaseからクリーンなソースを取得
-  fetch(ORIGIN_URL)
+  // cache:'no-store'でブラウザキャッシュを完全に無視し常に最新版を取得する
+  fetch(ORIGIN_URL, {cache:'no-store'})
     .then(r=>r.text())
     .then(src=>doDownload(src))
     .catch(()=>alert('保存に失敗しました。インターネット接続を確認してください。'));
