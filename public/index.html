@@ -364,7 +364,7 @@ let selMaker=null,selSeries=null,selFence=null;
 let selFenceFound=null,foundWithFence=null;
 let selFoundOnly=null;
 let mg={fence:0,found:0,custom:0};
-let groups=[]; // 追加済み品目グループ
+var groups=[]; // 追加済み品目グループ（saved-stateスクリプトから上書きできるようvarで宣言）
 
 // ===== タブ =====
 function switchTab(t){
