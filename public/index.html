@@ -1088,7 +1088,8 @@ renderFenceFoundGrid();
 renderFoundOnlyGrid();
 
 // 保存ファイルから開いた場合の状態復元
-(function(){
+// DOMContentLoadedで全HTML解析後に実行（saved-stateタグが確実にDOM上にある）
+document.addEventListener('DOMContentLoaded',function(){
   const el=document.getElementById('saved-state');
   if(!el)return;
   try{
@@ -1098,7 +1099,7 @@ renderFoundOnlyGrid();
       renderGroups();
     }
   }catch(e){console.error('State restore failed:',e);}
-})();
+});
 </script>
 </body>
 </html>
