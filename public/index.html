@@ -1037,7 +1037,7 @@ body{font-family:'Noto Sans JP',sans-serif;font-size:10pt;color:#111;background:
 /* header */
 .hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6pt;}
 .hdr-left{flex:1;}
-.cli-date{font-size:9pt;margin-bottom:5pt;text-align:center;}
+.cli-date{font-size:9pt;margin-bottom:5pt;}
 .cli-name{font-size:17pt;font-weight:700;border-bottom:2px solid #111;display:inline-block;padding-bottom:2pt;margin-bottom:4pt;min-width:260px;}
 .cli-note{font-size:8pt;color:#555;line-height:1.8;}
 .hdr-right{border:1px solid #aaa;padding:0;text-align:right;min-width:240px;flex-shrink:0;overflow:hidden;display:flex;flex-direction:column;}
@@ -1088,9 +1088,9 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
 <div class="page">
   <div style="text-align:right;font-size:8pt;margin-bottom:2pt;color:#666;">No.&ensp;${estNo}</div>
   <div class="doc-title">御　見　積　書</div>
+  <div style="text-align:center;font-size:9pt;margin-bottom:6pt;">${date}</div>
   <div class="hdr">
     <div class="hdr-left">
-      <div class="cli-date">${date}</div>
       <div class="cli-name">${client}&ensp;御中</div>
       <div class="cli-note">
         下記の通り御見積り申し上げます。<br>
