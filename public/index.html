@@ -888,6 +888,9 @@ function saveEstimate(){
   const prevTitle=document.title;
   document.title=subject;
 
+  // condListの入力値をHTML属性に同期（outerHTMLはvalue属性を使うため）
+  document.querySelectorAll('#condList input').forEach(inp=>inp.setAttribute('value',inp.value));
+
   // 現在のページHTMLをそのままキャプチャ（Firebaseへのfetch不要）
   const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
 
