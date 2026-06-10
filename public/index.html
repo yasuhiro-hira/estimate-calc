@@ -314,6 +314,7 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       </div>
       <div class="field"><label>宛先（会社名）</label><input type="text" id="pdfClient" placeholder="日本道路 株式会社"></div>
       <div class="field"><label>件名</label><input type="text" id="pdfSubject" placeholder="山岡家瑞穂店 フェンス工事"></div>
+      <div class="field"><label>納期</label><input type="text" id="pdfNoki" placeholder="御打合せ"></div>
       <div class="field"><label>有効期限</label><select id="pdfExpiry" style="border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:#fff;outline:none;width:100%;"></select></div>
       <div class="field">
         <label>見積条件</label>
@@ -980,6 +981,7 @@ function genPdf(){
   const date=document.getElementById('pdfDate').value||'　';
   const estNo=document.getElementById('pdfEstNo').value.trim()||'';
   const expiry=document.getElementById('pdfExpiry').value||'';
+  const noki=document.getElementById('pdfNoki').value.trim()||'御打合せ';
   if(estNo)saveEstNo(estNo);
   const condHTML=Array.from(document.querySelectorAll('#condList input'))
     .map(inp=>inp.value.trim()).filter(Boolean).map(l=>`<p>${l}</p>`).join('');
@@ -1035,7 +1037,7 @@ body{font-family:'Noto Sans JP',sans-serif;font-size:10pt;color:#111;background:
 /* header */
 .hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6pt;}
 .hdr-left{flex:1;}
-.cli-date{font-size:9pt;margin-bottom:5pt;}
+.cli-date{font-size:9pt;margin-bottom:5pt;text-align:center;}
 .cli-name{font-size:17pt;font-weight:700;border-bottom:2px solid #111;display:inline-block;padding-bottom:2pt;margin-bottom:4pt;min-width:260px;}
 .cli-note{font-size:8pt;color:#555;line-height:1.8;}
 .hdr-right{border:1px solid #aaa;padding:0;text-align:right;min-width:240px;flex-shrink:0;overflow:hidden;display:flex;flex-direction:column;}
@@ -1117,7 +1119,7 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
       <div class="sg-item"><span class="sg-lbl">件　名</span><span class="sg-val">${subject}</span></div>
       <div class="sg-item"><span class="sg-lbl">支払条件</span><span class="sg-val">御打合せ</span></div>
       <div class="sg-item"><span class="sg-lbl">受渡場所</span><span class="sg-val">御打合せ</span></div>
-      <div class="sg-item"><span class="sg-lbl">納　　期</span><span class="sg-val">御打合せ</span></div>
+      <div class="sg-item"><span class="sg-lbl">納　　期</span><span class="sg-val">${noki}</span></div>
       <div class="sg-item"><span class="sg-lbl">有効期限</span><span class="sg-val">${expiry}</span></div>
       <div class="sg-item"><span class="sg-lbl">備　　考</span><span class="sg-val">&emsp;</span></div>
     </div>
