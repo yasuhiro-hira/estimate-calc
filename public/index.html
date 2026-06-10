@@ -311,7 +311,11 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       <div class="field"><label>宛先（会社名）</label><input type="text" id="pdfClient" placeholder="日本道路 株式会社"></div>
       <div class="field"><label>件名</label><input type="text" id="pdfSubject" placeholder="山岡家瑞穂店 フェンス工事"></div>
       <div class="field"><label>日付</label><input type="text" id="pdfDate"></div>
-      <div class="field"><label>見積条件（1行1項目・編集・追加可）</label><textarea id="pdfConditions" rows="7" style="border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:12px;color:var(--text);background:#fff;outline:none;width:100%;resize:vertical;font-family:'Noto Sans JP',sans-serif;line-height:1.6;"></textarea></div>
+      <div class="field">
+        <label>見積条件</label>
+        <div id="condList" style="display:flex;flex-direction:column;gap:6px;margin-top:2px;"></div>
+        <button type="button" onclick="addCondItem('')" style="margin-top:8px;width:100%;padding:9px;border:1.5px dashed var(--border);border-radius:8px;background:#fafafa;color:var(--text2);font-size:13px;cursor:pointer;">＋ 条件を追加</button>
+      </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:18px;">
       <button onclick="closePdfModal()" style="flex:1;padding:12px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;font-size:14px;cursor:pointer;">キャンセル</button>
@@ -904,13 +908,33 @@ const DEFAULT_CONDITIONS=[
   '交通誘導員、規制費、安全施設費等は、含まれておりません。',
   '資材等の搬入は、4t車級での搬入可能として御見積りしております。',
   '本御見積条件及び物価高騰による著しい価格変化が生じた場合は、別途再見積りとさせていただきます。',
-].join('\n');
+];
+function addCondItem(text){
+  const list=document.getElementById('condList');
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:6px;align-items:center;';
+  const inp=document.createElement('input');
+  inp.type='text';inp.value=text;
+  inp.style.cssText='flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:\'Noto Sans JP\',sans-serif;color:var(--text);background:#fff;outline:none;';
+  inp.addEventListener('focus',()=>inp.style.borderColor='var(--accent)');
+  inp.addEventListener('blur',()=>inp.style.borderColor='var(--border)');
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();addCondItem('');}
+  });
+  const del=document.createElement('button');
+  del.type='button';del.textContent='×';
+  del.style.cssText='width:32px;height:36px;border:1px solid #fca5a5;border-radius:6px;background:#fff;color:var(--red);cursor:pointer;flex-shrink:0;font-size:15px;';
+  del.onclick=()=>row.remove();
+  row.appendChild(inp);row.appendChild(del);
+  list.appendChild(row);
+  if(text==='')inp.focus();
+}
 function openPdfModal(){
   const today=new Date();
   const el=document.getElementById('pdfDate');
   if(!el.value)el.value=`令和${today.getFullYear()-2018}年${today.getMonth()+1}月${today.getDate()}日`;
-  const cond=document.getElementById('pdfConditions');
-  if(!cond.value)cond.value=DEFAULT_CONDITIONS;
+  const list=document.getElementById('condList');
+  if(list.children.length===0)DEFAULT_CONDITIONS.forEach(t=>addCondItem(t));
   document.getElementById('pdfModal').style.display='block';
 }
 function closePdfModal(){document.getElementById('pdfModal').style.display='none';}
@@ -920,8 +944,8 @@ function genPdf(){
   const client=document.getElementById('pdfClient').value||'　';
   const subject=document.getElementById('pdfSubject').value||'　';
   const date=document.getElementById('pdfDate').value||'　';
-  const condLines=document.getElementById('pdfConditions').value.split('\n').filter(l=>l.trim());
-  const condHTML=condLines.map(l=>`<p>${l.trim()}</p>`).join('');
+  const condHTML=Array.from(document.querySelectorAll('#condList input'))
+    .map(inp=>inp.value.trim()).filter(Boolean).map(l=>`<p>${l}</p>`).join('');
   const issuer='株式会社サクラ',addr='東京都文京区本駒込4－42－11　サクラ文京2F',tel='03(3828)4466',staff='平野 泰宏';
   const fmtN=n=>Math.round(n).toLocaleString();
 
