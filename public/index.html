@@ -268,6 +268,11 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
     <div style="font-size:13px;font-weight:700;color:var(--green);">合計見積金額</div>
     <div style="font-size:28px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green);" id="grandVal">—<span style="font-size:13px;color:var(--text2);margin-left:2px;">円</span></div>
   </div>
+  <div style="border-top:1px solid var(--border);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-size:12px;color:var(--text2);">全体仕入れ金額</div>
+    <div style="font-size:14px;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text);" id="grandCostVal">—</div>
+  </div>
+  <div id="grandBreakdown" style="display:none;"></div>
   <div style="background:#fff7ed;border-top:1px solid #fed7aa;padding:10px 16px;display:flex;align-items:center;gap:8px;">
     <div style="font-size:12px;color:var(--orange);font-weight:700;flex:1;">全体粗利</div>
     <div style="font-size:16px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--orange);" id="grandProfitAmt"></div>
@@ -857,8 +862,39 @@ function renderGrand(){
   const totalProfitRate=totalFinal>0?totalProfit/totalFinal*100:0;
 
   document.getElementById('grandVal').innerHTML=`${totalFinal.toLocaleString()}<span>円</span>`;
+  document.getElementById('grandCostVal').textContent=fmt(totalCost);
   document.getElementById('grandProfitAmt').textContent=fmt(totalProfit);
   document.getElementById('grandProfitRate').textContent=`${totalProfitRate.toFixed(1)}%`;
+
+  // 内訳
+  const makerTotals={};
+  let lossTotal=0,foundMatTotal=0,laborTotal=0,customTotal=0;
+  groups.forEach(g=>{
+    if(g.type==='fence'){
+      makerTotals[g.fence.maker]=(makerTotals[g.fence.maker]||0)+g.res.fence.mat;
+      lossTotal+=g.res.fence.loss;
+      laborTotal+=g.res.fence.lab;
+      if(g.withFound){foundMatTotal+=g.res.found.mat;laborTotal+=g.res.found.lab;}
+    } else if(g.type==='foundation'){
+      foundMatTotal+=g.mat;laborTotal+=g.lab;
+    } else if(g.type==='custom'){
+      customTotal+=g.cost;
+    }
+  });
+  const bdRows=[];
+  Object.entries(makerTotals).forEach(([maker,val])=>bdRows.push([maker+'（材料）',val]));
+  if(lossTotal>0)bdRows.push(['材料ロス（5%）',lossTotal]);
+  if(foundMatTotal>0)bdRows.push(['基礎材料費',foundMatTotal]);
+  if(laborTotal>0)bdRows.push(['施工費計',laborTotal]);
+  if(customTotal>0)bdRows.push(['手入力品目',customTotal]);
+  const bd=document.getElementById('grandBreakdown');
+  if(bdRows.length>0){
+    bd.style.display='block';
+    bd.innerHTML='<div style="padding:5px 14px 3px;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.08em;background:#fafafa;border-top:1px solid var(--border);">内　訳</div>'
+      +bdRows.map(([label,val])=>`<div style="display:grid;grid-template-columns:1fr auto;padding:5px 14px;border-top:1px solid var(--border);"><div style="font-size:11px;color:var(--text2);">${label}</div><div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text2);text-align:right;">${fmt(val)}</div></div>`).join('');
+  } else {
+    bd.style.display='none';
+  }
 }
 
 // ===== 保存 =====
