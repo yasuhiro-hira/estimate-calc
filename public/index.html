@@ -311,6 +311,7 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       <div class="field"><label>宛先（会社名）</label><input type="text" id="pdfClient" placeholder="日本道路 株式会社"></div>
       <div class="field"><label>件名</label><input type="text" id="pdfSubject" placeholder="山岡家瑞穂店 フェンス工事"></div>
       <div class="field"><label>日付</label><input type="text" id="pdfDate"></div>
+      <div class="field"><label>見積条件（1行1項目・編集・追加可）</label><textarea id="pdfConditions" rows="7" style="border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:12px;color:var(--text);background:#fff;outline:none;width:100%;resize:vertical;font-family:'Noto Sans JP',sans-serif;line-height:1.6;"></textarea></div>
     </div>
     <div style="display:flex;gap:8px;margin-top:18px;">
       <button onclick="closePdfModal()" style="flex:1;padding:12px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;font-size:14px;cursor:pointer;">キャンセル</button>
@@ -895,10 +896,21 @@ function saveEstimate(){
   document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
 }
+const DEFAULT_CONDITIONS=[
+  '昼間一括施工として御見積りしております。',
+  '本御見積りは、コンクリートのハツリ、撤去、コア抜き、舗装カッター等の作業は含まれておりません。',
+  '本工事にて発生する産廃処分、発生材処分、梱包材、加工後の廃材等は、現場処分願います。',
+  '本工事の際に使用する資材及び工事車両置場の無償貸与をお願い致します。',
+  '交通誘導員、規制費、安全施設費等は、含まれておりません。',
+  '資材等の搬入は、4t車級での搬入可能として御見積りしております。',
+  '本御見積条件及び物価高騰による著しい価格変化が生じた場合は、別途再見積りとさせていただきます。',
+].join('\n');
 function openPdfModal(){
   const today=new Date();
   const el=document.getElementById('pdfDate');
   if(!el.value)el.value=`令和${today.getFullYear()-2018}年${today.getMonth()+1}月${today.getDate()}日`;
+  const cond=document.getElementById('pdfConditions');
+  if(!cond.value)cond.value=DEFAULT_CONDITIONS;
   document.getElementById('pdfModal').style.display='block';
 }
 function closePdfModal(){document.getElementById('pdfModal').style.display='none';}
@@ -908,6 +920,8 @@ function genPdf(){
   const client=document.getElementById('pdfClient').value||'　';
   const subject=document.getElementById('pdfSubject').value||'　';
   const date=document.getElementById('pdfDate').value||'　';
+  const condLines=document.getElementById('pdfConditions').value.split('\n').filter(l=>l.trim());
+  const condHTML=condLines.map(l=>`<p>${l.trim()}</p>`).join('');
   const issuer='株式会社サクラ',addr='東京都文京区本駒込4－42－11　サクラ文京2F',tel='03(3828)4466',staff='平野 泰宏';
   const fmtN=n=>Math.round(n).toLocaleString();
 
@@ -971,7 +985,7 @@ body{font-family:'Noto Sans JP',sans-serif;font-size:10pt;color:#111;background:
 .stamp-col{display:flex;flex-direction:column;flex:1;border-right:1px solid #999;}
 .stamp-col:last-child{border-right:none;}
 .scol-body{display:flex;align-items:center;justify-content:center;min-height:70px;padding:2pt;}
-.stamp{width:28px;height:34px;border:2px solid #c00;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:7.5pt;color:#c00;font-weight:700;writing-mode:vertical-rl;letter-spacing:0.05em;}
+.stamp{width:38px;height:46px;border:2px solid #c00;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10pt;color:#c00;font-weight:700;writing-mode:vertical-rl;letter-spacing:0.05em;}
 
 /* summary */
 .sumbox{border:1.5px solid #111;margin-bottom:7pt;}
@@ -1067,13 +1081,7 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
   </table>
   <div class="cond">
     <div class="cond-ttl">≪ 見積条件 ≫</div>
-    <p>昼間一括施工として御見積りしております。</p>
-    <p>本御見積りは、コンクリートのハツリ、撤去、コア抜き、舗装カッター等の作業は含まれておりません。</p>
-    <p>本工事にて発生する産廃処分、発生材処分、梱包材、加工後の廃材等は、現場処分願います。</p>
-    <p>本工事の際に使用する資材及び工事車両置場の無償貸与をお願い致します。</p>
-    <p>交通誘導員、規制費、安全施設費等は、含まれておりません。</p>
-    <p>資材等の搬入は、4t車級での搬入可能として御見積りしております。</p>
-    <p>本御見積条件及び物価高騰による著しい価格変化が生じた場合は、別途再見積りとさせていただきます。</p>
+    ${condHTML}
   </div>
 </div>
 </body></html>`);
