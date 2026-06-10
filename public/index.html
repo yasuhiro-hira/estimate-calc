@@ -309,7 +309,7 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
     <div style="font-size:15px;font-weight:700;margin-bottom:16px;">📄 見積書の情報を入力</div>
     <div style="display:flex;flex-direction:column;gap:12px;">
       <div class="col2">
-        <div class="field"><label>見積番号</label><input type="text" id="pdfEstNo" placeholder="202606-001"></div>
+        <div class="field"><label>見積番号</label><input type="text" id="pdfEstNo" placeholder="20260610-01"></div>
         <div class="field"><label>日付</label><input type="text" id="pdfDate"></div>
       </div>
       <div class="field"><label>宛先（会社名）</label><input type="text" id="pdfClient" placeholder="日本道路 株式会社"></div>
@@ -938,14 +938,14 @@ function addCondItem(text){
 }
 function suggestEstNo(){
   const today=new Date();
-  const ym=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}`;
+  const ymd=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
   const stored=JSON.parse(localStorage.getItem('estNoState')||'null');
-  const seq=(stored&&stored.month===ym)?stored.seq+1:1;
-  return `${ym}-${String(seq).padStart(3,'0')}`;
+  const seq=(stored&&stored.day===ymd)?stored.seq+1:1;
+  return `${ymd}-${String(seq).padStart(2,'0')}`;
 }
 function saveEstNo(val){
-  const m=val.slice(0,6);const s=parseInt(val.slice(7))||1;
-  localStorage.setItem('estNoState',JSON.stringify({month:m,seq:s}));
+  const d=val.slice(0,8);const s=parseInt(val.slice(9))||1;
+  localStorage.setItem('estNoState',JSON.stringify({day:d,seq:s}));
 }
 function buildExpiryOptions(){
   const sel=document.getElementById('pdfExpiry');
