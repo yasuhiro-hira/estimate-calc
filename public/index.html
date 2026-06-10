@@ -308,9 +308,13 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
   <div style="background:#fff;border-radius:14px;padding:20px;max-width:480px;margin:0 auto;">
     <div style="font-size:15px;font-weight:700;margin-bottom:16px;">📄 見積書の情報を入力</div>
     <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="col2">
+        <div class="field"><label>見積番号</label><input type="text" id="pdfEstNo" placeholder="202606-001"></div>
+        <div class="field"><label>日付</label><input type="text" id="pdfDate"></div>
+      </div>
       <div class="field"><label>宛先（会社名）</label><input type="text" id="pdfClient" placeholder="日本道路 株式会社"></div>
       <div class="field"><label>件名</label><input type="text" id="pdfSubject" placeholder="山岡家瑞穂店 フェンス工事"></div>
-      <div class="field"><label>日付</label><input type="text" id="pdfDate"></div>
+      <div class="field"><label>有効期限</label><select id="pdfExpiry" style="border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:#fff;outline:none;width:100%;"></select></div>
       <div class="field">
         <label>見積条件</label>
         <div id="condList" style="display:flex;flex-direction:column;gap:6px;margin-top:2px;"></div>
@@ -929,10 +933,37 @@ function addCondItem(text){
   list.appendChild(row);
   if(text==='')inp.focus();
 }
+function suggestEstNo(){
+  const today=new Date();
+  const ym=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}`;
+  const stored=JSON.parse(localStorage.getItem('estNoState')||'null');
+  const seq=(stored&&stored.month===ym)?stored.seq+1:1;
+  return `${ym}-${String(seq).padStart(3,'0')}`;
+}
+function saveEstNo(val){
+  const m=val.slice(0,6);const s=parseInt(val.slice(7))||1;
+  localStorage.setItem('estNoState',JSON.stringify({month:m,seq:s}));
+}
+function buildExpiryOptions(){
+  const sel=document.getElementById('pdfExpiry');
+  const cur=sel.value;sel.innerHTML='';
+  const today=new Date();
+  for(let i=1;i<=6;i++){
+    const d=new Date(today.getFullYear(),today.getMonth()+1+i,0);
+    const label=`令和${d.getFullYear()-2018}年${d.getMonth()+1}月${d.getDate()}日`;
+    const opt=document.createElement('option');
+    opt.value=label;opt.textContent=label;
+    if(label===cur)opt.selected=true;
+    sel.appendChild(opt);
+  }
+}
 function openPdfModal(){
   const today=new Date();
   const el=document.getElementById('pdfDate');
   if(!el.value)el.value=`令和${today.getFullYear()-2018}年${today.getMonth()+1}月${today.getDate()}日`;
+  const estNo=document.getElementById('pdfEstNo');
+  if(!estNo.value)estNo.value=suggestEstNo();
+  buildExpiryOptions();
   const list=document.getElementById('condList');
   if(list.children.length===0)DEFAULT_CONDITIONS.forEach(t=>addCondItem(t));
   document.getElementById('pdfModal').style.display='block';
@@ -944,6 +975,9 @@ function genPdf(){
   const client=document.getElementById('pdfClient').value||'　';
   const subject=document.getElementById('pdfSubject').value||'　';
   const date=document.getElementById('pdfDate').value||'　';
+  const estNo=document.getElementById('pdfEstNo').value.trim()||'';
+  const expiry=document.getElementById('pdfExpiry').value||'';
+  if(estNo)saveEstNo(estNo);
   const condHTML=Array.from(document.querySelectorAll('#condList input'))
     .map(inp=>inp.value.trim()).filter(Boolean).map(l=>`<p>${l}</p>`).join('');
   const issuer='株式会社サクラ',addr='東京都文京区本駒込4－42－11　サクラ文京2F',tel='03(3828)4466',staff='平野 泰宏';
@@ -1047,7 +1081,7 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
   　<strong>②「用紙サイズ」→ A4　③「余白」→ なし（最小）</strong></span>
 </div>
 <div class="page">
-  <div style="text-align:right;font-size:8pt;margin-bottom:2pt;color:#666;">No.&emsp;&emsp;</div>
+  <div style="text-align:right;font-size:8pt;margin-bottom:2pt;color:#666;">No.&ensp;${estNo}</div>
   <div class="doc-title">御　見　積　書</div>
   <div class="hdr">
     <div class="hdr-left">
@@ -1081,7 +1115,7 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
       <div class="sg-item"><span class="sg-lbl">支払条件</span><span class="sg-val">御打合せ</span></div>
       <div class="sg-item"><span class="sg-lbl">受渡場所</span><span class="sg-val">御打合せ</span></div>
       <div class="sg-item"><span class="sg-lbl">納　　期</span><span class="sg-val">御打合せ</span></div>
-      <div class="sg-item"><span class="sg-lbl">有効期限</span><span class="sg-val">発行日より3ヶ月</span></div>
+      <div class="sg-item"><span class="sg-lbl">有効期限</span><span class="sg-val">${expiry}</span></div>
       <div class="sg-item"><span class="sg-lbl">備　　考</span><span class="sg-val">&emsp;</span></div>
     </div>
   </div>
