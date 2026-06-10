@@ -849,7 +849,6 @@ function renderGrand(){
   document.getElementById('grandVal').innerHTML=`${totalFinal.toLocaleString()}<span>円</span>`;
   document.getElementById('grandProfitAmt').textContent=fmt(totalProfit);
   document.getElementById('grandProfitRate').textContent=`${totalProfitRate.toFixed(1)}%`;
-  window.lastGroups = JSON.parse(JSON.stringify(groups)); // 最新データを完全コピー
 }
 
 // ===== 保存 =====
@@ -862,40 +861,39 @@ function openSaveModal(){
 function closeSaveModal(){document.getElementById('saveModal').style.display='none';}
 
 function saveEstimate(){
-  const gs=window.lastGroups;
-  if(!gs||gs.length===0){alert('品目がありません');return;}
+  if(groups.length===0){alert('品目がありません');return;}
   const subject=document.getElementById('saveSubject').value||'見積';
   closeSaveModal();
 
-  const stateJson=JSON.stringify(gs).replace(/<\/script>/gi,'<\\/script>');
-  // 常にFirebaseのオリジンURLからクリーンなソースを取得する
-  // （file://で開いた保存ファイルからでも正しく動作するようにするため）
-  const ORIGIN_URL='https://estimate-calc-hirano.web.app/';
-
-  function doDownload(src){
-    // 再保存時：前回注入したstateスクリプトを除去（両フォーマット対応）
-    src=src.replace(/<script id="saved-state"[^>]*>[\s\S]*?<\/script>\n?/,'');
-    // タイトル更新
-    src=src.replace(/<title>[^<]*<\/title>/,'<title>'+subject+'<\/title>');
-    // </head>直前にJSONデータとして注入（メインスクリプトより先に解析されDOMに入る）
-    src=src.replace(/<\/head>/,
-      '<script id="saved-state" type="application/json">'+stateJson+'<\/script>\n</head>');
-    const blob=new Blob([src],{type:'text/html;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download='見積_'+subject+'.html';
-    document.body.appendChild(a);a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // 状態をheadに注入（type="application/json"なので自動実行されない）
+  let stateEl=document.getElementById('saved-state');
+  if(!stateEl){
+    stateEl=document.createElement('script');
+    stateEl.id='saved-state';
+    stateEl.type='application/json';
+    document.head.appendChild(stateEl);
   }
+  stateEl.textContent=JSON.stringify(groups).replace(/<\//g,'<\\/');
 
-  // file://から開いた場合でも常にFirebaseからクリーンなソースを取得
-  // cache:'no-store'でブラウザキャッシュを完全に無視し常に最新版を取得する
-  fetch(ORIGIN_URL, {cache:'no-store'})
-    .then(r=>r.text())
-    .then(src=>doDownload(src))
-    .catch(()=>alert('保存に失敗しました。インターネット接続を確認してください。'));
+  // タイトルを更新
+  const prevTitle=document.title;
+  document.title=subject;
+
+  // 現在のページHTMLをそのままキャプチャ（Firebaseへのfetch不要）
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+
+  // ライブDOMを元に戻す
+  stateEl.remove();
+  document.title=prevTitle;
+
+  // ダウンロード
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='見積_'+subject+'.html';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
 }
 function openPdfModal(){
   const today=new Date();
@@ -906,7 +904,7 @@ function openPdfModal(){
 function closePdfModal(){document.getElementById('pdfModal').style.display='none';}
 
 function genPdf(){
-  const gs=window.lastGroups;if(!gs)return;
+  const gs=groups;if(!gs||gs.length===0)return;
   const client=document.getElementById('pdfClient').value||'　';
   const subject=document.getElementById('pdfSubject').value||'　';
   const date=document.getElementById('pdfDate').value||'　';
