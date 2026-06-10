@@ -274,10 +274,11 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
   </div>
   <div style="background:#fff7ed;border-top:1px solid #fed7aa;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;">
     <div style="font-size:12px;font-weight:700;color:var(--orange);">全体粗利</div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--orange);" id="grandProfitAmt"></div>
-      <div style="font-size:11px;color:var(--orange);background:var(--orange-light);border:1px solid #fcd34d;border-radius:12px;padding:2px 8px;" id="grandProfitRate"></div>
-    </div>
+    <div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--orange);" id="grandProfitAmt"></div>
+  </div>
+  <div style="background:#fff7ed;border-top:1px solid rgba(254,215,170,0.5);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-size:12px;font-weight:700;color:var(--orange);">粗利率</div>
+    <div style="font-size:16px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--orange);" id="grandProfitRate"></div>
   </div>
 </div>
 
@@ -869,8 +870,8 @@ function renderGrand(){
   const totalProfitRate=totalFinal>0?totalProfit/totalFinal*100:0;
 
   document.getElementById('grandVal').innerHTML=`${totalFinal.toLocaleString()}<span>円</span>`;
-  document.getElementById('grandCostVal').textContent=fmt(totalCost);
-  document.getElementById('grandProfitAmt').textContent=fmt(totalProfit);
+  document.getElementById('grandCostVal').innerHTML=`${Math.round(totalCost).toLocaleString()}<span style="font-size:12px;margin-left:2px;">円</span>`;
+  document.getElementById('grandProfitAmt').innerHTML=`${Math.round(totalProfit).toLocaleString()}<span style="font-size:12px;margin-left:2px;">円</span>`;
   document.getElementById('grandProfitRate').textContent=`${totalProfitRate.toFixed(1)}%`;
 
   // 内訳
