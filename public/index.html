@@ -689,10 +689,10 @@ function makeCard(g){
     calcText=`¥${r.estPerM.toLocaleString()} × ${g.m}m = ¥${r.estTotal.toLocaleString()}`;
     profitText=`粗利 ${r.profitRate.toFixed(1)}%`;
   } else if(g.type==='foundation'){
-    calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}個 = ¥${g.finalEst.toLocaleString()}`;
+    calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}個 = ¥${g.estTotal.toLocaleString()}`;
     profitText=`粗利 ${g.profitRate.toFixed(1)}%`;
   } else {
-    calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}${g.unit} = ¥${g.finalEst.toLocaleString()}`;
+    calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}${g.unit} = ¥${g.estTotal.toLocaleString()}`;
     profitText=`粗利 ${g.profitRate.toFixed(1)}%`;
   }
 
