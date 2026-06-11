@@ -134,8 +134,9 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
 
 <!-- タブ -->
 <div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('fence')">🔲 メッシュフェンス</button>
-  <button class="tab-btn" onclick="switchTab('foundation')">⬜ 基礎単体</button>
+  <button class="tab-btn active" onclick="switchTab('fence')">🔲 フェンス</button>
+  <button class="tab-btn" onclick="switchTab('product')">🔧 製品工事</button>
+  <button class="tab-btn" onclick="switchTab('foundation')">⬜ 独立基礎</button>
   <button class="tab-btn" onclick="switchTab('custom')">✏️ 手入力</button>
 </div>
 
@@ -230,6 +231,47 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       <button class="mg-btn" data-v="25" onclick="setMg('found',25)">25%</button>
       <button class="mg-btn" data-v="30" onclick="setMg('found',30)">30%</button>
       <input class="mg-custom" type="number" id="foundMgCustom" placeholder="任意%" inputmode="decimal" oninput="setMgCustom('found')">
+    </div>
+  </div>
+</div>
+
+<!-- 製品工事タブ -->
+<div id="tab-product" class="tab-panel">
+  <div class="card">
+    <div class="card-title">① 工種</div>
+    <div id="productTypeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+  </div>
+  <div class="card step" id="step-product">
+    <div class="card-title">② 品名・規格（任意）</div>
+    <div class="field"><input type="text" id="productName" placeholder="メーカー名・品番など"></div>
+    <div class="card-title gap">③ 数量（<span id="productUnitLabel2">個</span>）</div>
+    <div class="m-ctrl">
+      <button class="m-ctrl-btn" onclick="chg('productQty',-1)">−</button>
+      <input type="number" id="productQty" value="1" inputmode="decimal">
+      <button class="m-ctrl-btn" onclick="chg('productQty',1)">＋</button>
+    </div>
+    <div class="card-title gap">④ 仕入単価（円/<span id="productUnitLabel">個</span>）</div>
+    <div class="m-ctrl">
+      <button class="m-ctrl-btn" onclick="chg('productCost',-1000)">−</button>
+      <input type="number" id="productCost" value="0" inputmode="numeric">
+      <button class="m-ctrl-btn" onclick="chg('productCost',1000)">＋</button>
+    </div>
+    <div class="card-title gap">⑤ 施工費（円/<span id="productLaborUnitLabel">個</span>）</div>
+    <div class="m-ctrl">
+      <button class="m-ctrl-btn" onclick="chg('productLabor',-500)">−</button>
+      <input type="number" id="productLabor" value="0" inputmode="numeric">
+      <button class="m-ctrl-btn" onclick="chg('productLabor',500)">＋</button>
+    </div>
+    <div class="hint" id="productLossHint"></div>
+    <div class="card-title gap">⑥ 利益率</div>
+    <div class="mg-btns" id="productMgBtns">
+      <button class="mg-btn" data-v="0"  onclick="setMg('product',0)">なし</button>
+      <button class="mg-btn" data-v="10" onclick="setMg('product',10)">10%</button>
+      <button class="mg-btn" data-v="15" onclick="setMg('product',15)">15%</button>
+      <button class="mg-btn" data-v="20" onclick="setMg('product',20)">20%</button>
+      <button class="mg-btn" data-v="25" onclick="setMg('product',25)">25%</button>
+      <button class="mg-btn" data-v="30" onclick="setMg('product',30)">30%</button>
+      <input class="mg-custom" type="number" id="productMgCustom" placeholder="任意%" inputmode="decimal" oninput="setMgCustom('product')">
     </div>
   </div>
 </div>
@@ -380,20 +422,62 @@ const FOUND_MASTER = [
   {id:'f10',name:'300×300×600',     shikiri:2460, defLabor:4600},
 ];
 
+const PRODUCT_TYPES=[
+  {id:'gate0',    label:'門扉　基礎なし',       unit:'基', laborDef:23000, hasLoss:false},
+  {id:'gate1',    label:'門扉　基礎材料あり',    unit:'基', laborDef:23000, hasLoss:false},
+  {id:'gate2',    label:'門扉　基礎あり',        unit:'基', laborDef:26450, hasLoss:false},
+  {id:'slide',    label:'引戸・ノンレール門扉',  unit:'箇所',laborDef:57500, hasLoss:false},
+  {id:'bollard1', label:'バリカー　独立基礎',    unit:'基', laborDef:5750,  hasLoss:false},
+  {id:'bollard2', label:'バリカー　現場打ち',    unit:'基', laborDef:12650, hasLoss:false},
+  {id:'roof',     label:'屋根工事',              unit:'棟', laborDef:57500, hasLoss:false},
+  {id:'mirror',   label:'ミラー',                unit:'基', laborDef:17250, hasLoss:false},
+  {id:'bikerack', label:'駐輪ラック',            unit:'台', laborDef:1725,  hasLoss:false},
+  {id:'postcone', label:'ポストコーン',          unit:'本', laborDef:2300,  hasLoss:false},
+  {id:'crossfence',label:'横断防止柵',           unit:'m',  laborDef:1863,  hasLoss:false},
+  {id:'pavefence',label:'ペーブフェンス',        unit:'m',  laborDef:1725,  hasLoss:true},
+  {id:'guard1',   label:'ガードレール　打込み',  unit:'m',  laborDef:1725,  hasLoss:true},
+  {id:'guard2',   label:'ガードレール　建込み',  unit:'m',  laborDef:1680,  hasLoss:true},
+];
+
 // ===== 状態 =====
 let currentTab='fence';
 let selMaker=null,selSeries=null,selFence=null;
 let selFenceFound=null,foundWithFence=null;
 let selFoundOnly=null;
-let mg={fence:0,found:0,custom:0};
+let selProductType=null;
+let mg={fence:0,found:0,custom:0,product:0};
 var groups=[]; // 追加済み品目グループ（saved-stateスクリプトから上書きできるようvarで宣言）
 
 // ===== タブ =====
 function switchTab(t){
   currentTab=t;
-  ['fence','foundation','custom'].forEach((n,i)=>{
+  ['fence','product','foundation','custom'].forEach((n,i)=>{
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n===t);
     document.getElementById('tab-'+n).classList.toggle('show',n===t);
+  });
+}
+
+// ===== 製品工事 =====
+function renderProductTypeGrid(){
+  const g=document.getElementById('productTypeGrid');
+  if(!g)return;
+  g.innerHTML='';
+  PRODUCT_TYPES.forEach(pt=>{
+    const b=document.createElement('button');
+    b.className='sel-btn'+(selProductType&&selProductType.id===pt.id?' active':'');
+    b.textContent=pt.label;
+    b.onclick=()=>{
+      selProductType=pt;
+      renderProductTypeGrid();
+      document.getElementById('step-product').classList.add('show');
+      document.getElementById('productLabor').value=pt.laborDef;
+      ['productUnitLabel','productUnitLabel2','productLaborUnitLabel'].forEach(id=>{
+        const el=document.getElementById(id);if(el)el.textContent=pt.unit;
+      });
+      const hint=document.getElementById('productLossHint');
+      if(hint)hint.textContent=pt.hasLoss?'※材料ロス5%を原価に自動加算します':'';
+    };
+    g.appendChild(b);
   });
 }
 
@@ -529,7 +613,7 @@ function setMgCustom(type){
   mg[type]=isNaN(v)?0:v;
   document.querySelectorAll(`#${type}MgBtns .mg-btn`).forEach(b=>b.classList.remove('active'));
 }
-['fence','found','custom'].forEach(t=>setMg(t,0));
+['fence','found','custom','product'].forEach(t=>setMg(t,0));
 
 // ===== 計算ヘルパー =====
 const fmt=n=>'¥'+Math.round(n).toLocaleString();
@@ -637,6 +721,43 @@ function addItem(){
     renderGroups();
     resetToTop();
   }
+  else if(currentTab==='product'){
+    if(!selProductType){alert('工種を選択してください');return;}
+    const name=document.getElementById('productName').value.trim();
+    const qty=parseFloat(document.getElementById('productQty').value)||0;
+    const costUnit=parseFloat(document.getElementById('productCost').value)||0;
+    const laborUnit=parseFloat(document.getElementById('productLabor').value)||0;
+    if(qty<=0){alert('数量を入力してください');return;}
+    const matCost=costUnit*qty;
+    const lossCost=selProductType.hasLoss?matCost*0.05:0;
+    const labCost=laborUnit*qty;
+    const cost=matCost+lossCost+labCost;
+    const margin=mg.product;
+    const totalPerUnit=cost/qty;
+    const sellPerUnit=margin>0&&margin<100?totalPerUnit/(1-margin/100):totalPerUnit;
+    const estPerUnit=ceilK(sellPerUnit,100);
+    const estTotal=Math.round(estPerUnit*qty);
+    const discount=estTotal%10000;
+    const finalEst=estTotal-discount;
+    const profit=finalEst-cost;
+    const profitRate=finalEst>0?profit/finalEst*100:0;
+    groups.push({
+      id:Date.now(),type:'product',
+      koushuuId:selProductType.id,
+      koushuu:selProductType.label,
+      hinshuu:selProductType.label,
+      naiyaku:name,
+      unit:selProductType.unit,
+      hasLoss:selProductType.hasLoss,
+      qty,costUnit,laborUnit,matCost,lossCost,labCost,cost,margin,
+      estPerUnit,estTotal,discount,finalEst,profit,profitRate,
+      estFinal:finalEst,costTotal:cost,
+      title:selProductType.label,
+      titleSub:(name?name+' ':'')+`×${qty}${selProductType.unit}`,
+    });
+    renderGroups();
+    resetToTop();
+  }
   else if(currentTab==='custom'){
     const name=document.getElementById('customName').value.trim();
     const costUnit=parseFloat(document.getElementById('customCost').value)||0;
@@ -691,6 +812,9 @@ function makeCard(g){
   } else if(g.type==='foundation'){
     calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}個 = ¥${g.estTotal.toLocaleString()}`;
     profitText=`粗利 ${g.profitRate.toFixed(1)}%`;
+  } else if(g.type==='product'){
+    calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}${g.unit} = ¥${g.estTotal.toLocaleString()}`;
+    profitText=`粗利 ${g.profitRate.toFixed(1)}%`;
   } else {
     calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}${g.unit} = ¥${g.estTotal.toLocaleString()}`;
     profitText=`粗利 ${g.profitRate.toFixed(1)}%`;
@@ -721,6 +845,17 @@ function makeCard(g){
       <div class="detail-col-hd"><span>原価内訳</span><span>原価</span></div>
       <div class="detail-row"><div class="detail-label">材料費（仕切価格）</div><div class="detail-cost">${fmt(g.mat)}</div></div>
       <div class="detail-row"><div class="detail-label">施工費（¥${g.labor.toLocaleString()}/個）</div><div class="detail-cost">${fmt(g.lab)}</div></div>
+      <div class="detail-total-row">
+        <div class="detail-total-label">合計原価</div>
+        <div class="detail-total-val">${fmt(g.cost)}</div>
+      </div>`;
+  } else if(g.type==='product'){
+    const lossRow=g.hasLoss?`<div class="detail-row"><div class="detail-label">材料ロス（5%）</div><div class="detail-cost">${fmt(g.lossCost)}</div></div>`:'';
+    detailHTML=`
+      <div class="detail-col-hd"><span>原価内訳</span><span>原価</span></div>
+      <div class="detail-row"><div class="detail-label">仕入（¥${g.costUnit.toLocaleString()}/${g.unit} × ${g.qty}${g.unit}）</div><div class="detail-cost">${fmt(g.matCost)}</div></div>
+      ${lossRow}
+      <div class="detail-row"><div class="detail-label">施工費（¥${g.laborUnit.toLocaleString()}/${g.unit} × ${g.qty}${g.unit}）</div><div class="detail-cost">${fmt(g.labCost)}</div></div>
       <div class="detail-total-row">
         <div class="detail-total-label">合計原価</div>
         <div class="detail-total-val">${fmt(g.cost)}</div>
@@ -811,6 +946,24 @@ function editGroup(id){
     updateFoundOnlyLaborHint();
     restoreMg('found',g.margin||0);
   }
+  else if(g.type==='product'){
+    switchTab('product');
+    selProductType=PRODUCT_TYPES.find(p=>p.id===g.koushuuId)||null;
+    renderProductTypeGrid();
+    if(selProductType){
+      document.getElementById('step-product').classList.add('show');
+      ['productUnitLabel','productUnitLabel2','productLaborUnitLabel'].forEach(id=>{
+        const el=document.getElementById(id);if(el)el.textContent=selProductType.unit;
+      });
+      const hint=document.getElementById('productLossHint');
+      if(hint)hint.textContent=selProductType.hasLoss?'※材料ロス5%を原価に自動加算します':'';
+    }
+    document.getElementById('productName').value=g.naiyaku||'';
+    document.getElementById('productQty').value=g.qty;
+    document.getElementById('productCost').value=g.costUnit;
+    document.getElementById('productLabor').value=g.laborUnit;
+    restoreMg('product',g.margin||0);
+  }
   else if(g.type==='custom'){
     switchTab('custom');
     document.getElementById('customName').value=g.hinshuu;
@@ -851,7 +1004,19 @@ function resetToTop(){
   safe('customQty',el=>el.value='');
   safe('customUnit',el=>el.value='');
 
-  ['fence','found','custom'].forEach(t=>setMg(t,0));
+  selProductType=null;
+  renderProductTypeGrid();
+  safe('step-product',el=>el.classList.remove('show'));
+  safe('productName',el=>el.value='');
+  safe('productQty',el=>el.value=1);
+  safe('productCost',el=>el.value=0);
+  safe('productLabor',el=>el.value=0);
+  safe('productLossHint',el=>el.textContent='');
+  ['productUnitLabel','productUnitLabel2','productLaborUnitLabel'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.textContent='個';
+  });
+
+  ['fence','found','custom','product'].forEach(t=>setMg(t,0));
   switchTab('fence');
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -876,6 +1041,7 @@ function renderGrand(){
 
   // 内訳
   const makerTotals={};
+  const productTotals={};
   let lossTotal=0,foundMatTotal=0,laborTotal=0,customTotal=0;
   groups.forEach(g=>{
     if(g.type==='fence'){
@@ -885,12 +1051,18 @@ function renderGrand(){
       if(g.withFound){foundMatTotal+=g.res.found.mat;laborTotal+=g.res.found.lab;}
     } else if(g.type==='foundation'){
       foundMatTotal+=g.mat;laborTotal+=g.lab;
+    } else if(g.type==='product'){
+      const k=g.koushuu;
+      productTotals[k]=(productTotals[k]||0)+g.matCost;
+      if(g.hasLoss)lossTotal+=g.lossCost;
+      laborTotal+=g.labCost;
     } else if(g.type==='custom'){
       customTotal+=g.cost;
     }
   });
   const bdRows=[];
   Object.entries(makerTotals).forEach(([maker,val])=>bdRows.push([maker+'（材料）',val]));
+  Object.entries(productTotals).forEach(([k,val])=>bdRows.push([k+'（仕入）',val]));
   if(lossTotal>0)bdRows.push(['材料ロス（5%）',lossTotal]);
   if(foundMatTotal>0)bdRows.push(['基礎材料費',foundMatTotal]);
   if(laborTotal>0)bdRows.push(['施工費計',laborTotal]);
@@ -1200,6 +1372,7 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
 renderMakerGrid();
 renderFenceFoundGrid();
 renderFoundOnlyGrid();
+renderProductTypeGrid();
 
 // 保存ファイルから開いた場合の状態復元
 // saved-stateは</head>内に注入されるため、body末尾のこのスクリプト実行時には既にDOM上にある
