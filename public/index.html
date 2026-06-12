@@ -28,8 +28,9 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
 .gap{margin-top:12px;}
 
 /* タブ */
-.tab-bar{display:flex;gap:6px;margin:12px 16px 0;}
-.tab-btn{flex:1;padding:10px 4px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;color:var(--text2);background:var(--card);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;transition:all 0.12s;}
+.tab-bar{display:flex;gap:6px;margin:12px 16px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab-btn{flex:0 0 auto;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;color:var(--text2);background:var(--card);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;transition:all 0.12s;white-space:nowrap;}
 .tab-btn.active{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
 .tab-panel{display:none;}
 .tab-panel.show{display:block;}
@@ -135,71 +136,163 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
 <!-- タブ -->
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('fence')">🔲 フェンス</button>
-  <button class="tab-btn" onclick="switchTab('product')">🔧 製品工事</button>
+  <button class="tab-btn" onclick="switchTab('gate')">🚪 門扉</button>
+  <button class="tab-btn" onclick="switchTab('bollard')">🚧 バリカー</button>
+  <button class="tab-btn" onclick="switchTab('other')">🔧 その他</button>
   <button class="tab-btn" onclick="switchTab('foundation')">⬜ 独立基礎</button>
   <button class="tab-btn" onclick="switchTab('custom')">✏️ 手入力</button>
 </div>
 
-<!-- フェンスタブ -->
-<div id="tab-fence" class="tab-panel show">
+<!-- 製品共通フォーム（フェンス/門扉/バリカー/その他） -->
+<div id="tab-product-form" class="tab-panel show">
+
+  <!-- ① 工種 -->
   <div class="card">
-    <div class="card-title">① メーカー</div>
-    <div class="sel-grid" id="makerGrid"></div>
+    <div class="card-title" id="subtypeSectionTitle">① 工種</div>
+    <div id="subtypeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
   </div>
-  <div class="card step" id="step-series">
-    <div class="card-title">② シリーズ</div>
-    <div class="sel-grid" id="seriesGrid"></div>
-  </div>
-  <div class="card step" id="step-height">
-    <div class="card-title">③ 高さ</div>
-    <div class="sel-grid col3" id="heightGrid"></div>
-  </div>
-  <div class="card step" id="step-m">
-    <div class="card-title">④ 施工延長（m）</div>
-    <div class="m-ctrl">
-      <button class="m-ctrl-btn" onclick="chg('fenceM',-0.5)">−</button>
-      <input type="number" id="fenceM" value="10" inputmode="decimal" oninput="onFenceMChange()">
-      <button class="m-ctrl-btn" onclick="chg('fenceM',0.5)">＋</button>
-    </div>
 
-    <div class="card-title gap">⑤ 施工費ベース（円/m）× 1.15</div>
-    <div class="m-ctrl">
-      <button class="m-ctrl-btn" onclick="chg('fenceLabor',-100)">−</button>
-      <input type="number" id="fenceLabor" value="0" inputmode="numeric" oninput="updateFenceLaborHint()">
-      <button class="m-ctrl-btn" onclick="chg('fenceLabor',100)">＋</button>
-    </div>
-    <div class="hint" id="fenceLaborHint"></div>
+  <!-- 通常フォーム（規格品以外） -->
+  <div id="normalProdForm">
+    <div class="card step" id="step-prod">
+      <div class="card-title">② メーカー</div>
+      <div id="makerPresetGrid" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+      <div class="field"><input type="text" id="prodMakerInput" placeholder="上記以外のメーカー名を直接入力"></div>
 
-    <div class="card-title gap">⑤ 基礎</div>
-    <div class="col2">
-      <button class="sel-btn" id="foundYesBtn" onclick="setFoundOpt(true)">基礎込み</button>
-      <button class="sel-btn" id="foundNoBtn"  onclick="setFoundOpt(false)">基礎なし</button>
-    </div>
+      <div class="card-title gap">③ 品名・規格（任意）</div>
+      <div class="field"><input type="text" id="prodSpecInput" placeholder="品番・規格・色など"></div>
 
-    <div id="found-section" style="display:none; margin-top:12px;">
-      <div class="card-title">基礎サイズ</div>
-      <div class="sel-grid col3" id="fenceFoundGrid"></div>
-      <div class="hint" id="foundQtyHint"></div>
-      <div class="card-title gap">施工費ベース（円/個）× 1.15</div>
+      <div class="card-title gap">④ 数量（<span id="prodUnitLabel">m</span>）</div>
       <div class="m-ctrl">
-        <button class="m-ctrl-btn" onclick="chg('foundLabor',-100)">−</button>
-        <input type="number" id="foundLabor" value="2000" inputmode="numeric" oninput="updateFoundLaborHint()">
-        <button class="m-ctrl-btn" onclick="chg('foundLabor',100)">＋</button>
+        <button class="m-ctrl-btn" onclick="chg('prodQty',-1)">−</button>
+        <input type="number" id="prodQty" value="1" inputmode="decimal" oninput="updateProdFoundHint()">
+        <button class="m-ctrl-btn" onclick="chg('prodQty',1)">＋</button>
       </div>
-      <div class="hint" id="foundLaborHint"></div>
-    </div>
 
-    <div class="card-title gap">⑥ 利益率</div>
-    <div class="mg-btns" id="fenceMgBtns">
-      <button class="mg-btn" data-v="0"  onclick="setMg('fence',0)">なし</button>
-      <button class="mg-btn" data-v="10" onclick="setMg('fence',10)">10%</button>
-      <button class="mg-btn" data-v="15" onclick="setMg('fence',15)">15%</button>
-      <button class="mg-btn" data-v="20" onclick="setMg('fence',20)">20%</button>
-      <button class="mg-btn" data-v="25" onclick="setMg('fence',25)">25%</button>
-      <button class="mg-btn" data-v="30" onclick="setMg('fence',30)">30%</button>
-      <input class="mg-custom" type="number" id="fenceMgCustom" placeholder="任意%" inputmode="decimal" oninput="setMgCustom('fence')">
+      <div class="card-title gap">⑤ 仕入単価（円/<span id="prodUnitLabel2">m</span>）</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button class="sel-btn" id="modeTeikaBt" onclick="setPriceMode('teika')">定価 × 掛率</button>
+        <button class="sel-btn active" id="modeShikiriBt" onclick="setPriceMode('shikiri')">仕切り直入力</button>
+      </div>
+      <div id="teikaSect" style="display:none;">
+        <div class="col2">
+          <div class="field"><label>定価（円）</label>
+            <input type="number" id="teikaVal" placeholder="10000" inputmode="numeric" oninput="calcShikiriFromTeika()">
+          </div>
+          <div class="field"><label>掛率（%）</label>
+            <input type="number" id="kakuritsuVal" placeholder="53" inputmode="decimal" oninput="calcShikiriFromTeika()">
+          </div>
+        </div>
+        <div class="hint" id="shikiriCalcHint">仕切り: —</div>
+      </div>
+      <div id="shikiriSect">
+        <div class="m-ctrl">
+          <button class="m-ctrl-btn" onclick="chg('shikiriVal',-100)">−</button>
+          <input type="number" id="shikiriVal" value="0" inputmode="numeric">
+          <button class="m-ctrl-btn" onclick="chg('shikiriVal',100)">＋</button>
+        </div>
+      </div>
+
+      <div class="card-title gap">⑥ 施工費（円/<span id="prodLaborUnitLabel">m</span>）</div>
+      <div class="m-ctrl">
+        <button class="m-ctrl-btn" onclick="chg('prodLabor',-500)">−</button>
+        <input type="number" id="prodLabor" value="0" inputmode="numeric">
+        <button class="m-ctrl-btn" onclick="chg('prodLabor',500)">＋</button>
+      </div>
+      <div class="hint" id="prodLossHint"></div>
+
+      <!-- 基礎セクション（hasFound時のみ） -->
+      <div id="prodFoundSect" style="display:none;">
+        <div class="card-title gap">⑦ 独立基礎サイズ</div>
+        <div id="prodFoundGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
+        <div class="card-title gap" style="margin-top:8px;">基礎数量（個）</div>
+        <div class="m-ctrl">
+          <button class="m-ctrl-btn" onclick="chg('prodFoundQty',-1)">−</button>
+          <input type="number" id="prodFoundQty" value="1" inputmode="numeric" oninput="updateProdFoundHint()">
+          <button class="m-ctrl-btn" onclick="chg('prodFoundQty',1)">＋</button>
+        </div>
+        <div class="hint" id="prodFoundQtyHint"></div>
+        <div id="prodFoundLaborSect" style="display:none;">
+          <div class="card-title gap">基礎施工費（円/個）</div>
+          <div class="m-ctrl">
+            <button class="m-ctrl-btn" onclick="chg('prodFoundLabor',-100)">−</button>
+            <input type="number" id="prodFoundLabor" value="0" inputmode="numeric">
+            <button class="m-ctrl-btn" onclick="chg('prodFoundLabor',100)">＋</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-title gap" id="mgProdStepLabel">⑦ 利益率</div>
+      <div class="mg-btns" id="prod2MgBtns">
+        <button class="mg-btn" data-v="0"  onclick="setMg('prod2',0)">なし</button>
+        <button class="mg-btn" data-v="10" onclick="setMg('prod2',10)">10%</button>
+        <button class="mg-btn" data-v="15" onclick="setMg('prod2',15)">15%</button>
+        <button class="mg-btn" data-v="20" onclick="setMg('prod2',20)">20%</button>
+        <button class="mg-btn" data-v="25" onclick="setMg('prod2',25)">25%</button>
+        <button class="mg-btn" data-v="30" onclick="setMg('prod2',30)">30%</button>
+        <input class="mg-custom" type="number" id="prod2MgCustom" placeholder="任意%" inputmode="decimal" oninput="setMgCustom('prod2')">
+      </div>
     </div>
   </div>
+
+  <!-- 規格品フォーム（fence-spec選択時） -->
+  <div id="specFenceForm" style="display:none;">
+    <div class="card">
+      <div class="card-title">② メーカー</div>
+      <div class="sel-grid" id="makerGrid"></div>
+    </div>
+    <div class="card step" id="step-series">
+      <div class="card-title">③ シリーズ</div>
+      <div class="sel-grid" id="seriesGrid"></div>
+    </div>
+    <div class="card step" id="step-height">
+      <div class="card-title">④ 高さ</div>
+      <div class="sel-grid col3" id="heightGrid"></div>
+    </div>
+    <div class="card step" id="step-m">
+      <div class="card-title">⑤ 施工延長（m）</div>
+      <div class="m-ctrl">
+        <button class="m-ctrl-btn" onclick="chg('fenceM',-0.5)">−</button>
+        <input type="number" id="fenceM" value="10" inputmode="decimal" oninput="onFenceMChange()">
+        <button class="m-ctrl-btn" onclick="chg('fenceM',0.5)">＋</button>
+      </div>
+      <div class="card-title gap">⑥ 施工費ベース（円/m）× 1.15</div>
+      <div class="m-ctrl">
+        <button class="m-ctrl-btn" onclick="chg('fenceLabor',-100)">−</button>
+        <input type="number" id="fenceLabor" value="0" inputmode="numeric" oninput="updateFenceLaborHint()">
+        <button class="m-ctrl-btn" onclick="chg('fenceLabor',100)">＋</button>
+      </div>
+      <div class="hint" id="fenceLaborHint"></div>
+      <div class="card-title gap">⑥ 基礎</div>
+      <div class="col2">
+        <button class="sel-btn" id="foundYesBtn" onclick="setFoundOpt(true)">基礎込み</button>
+        <button class="sel-btn" id="foundNoBtn"  onclick="setFoundOpt(false)">基礎なし</button>
+      </div>
+      <div id="found-section" style="display:none; margin-top:12px;">
+        <div class="card-title">基礎サイズ</div>
+        <div class="sel-grid col3" id="fenceFoundGrid"></div>
+        <div class="hint" id="foundQtyHint"></div>
+        <div class="card-title gap">施工費ベース（円/個）× 1.15</div>
+        <div class="m-ctrl">
+          <button class="m-ctrl-btn" onclick="chg('foundLabor',-100)">−</button>
+          <input type="number" id="foundLabor" value="2000" inputmode="numeric" oninput="updateFoundLaborHint()">
+          <button class="m-ctrl-btn" onclick="chg('foundLabor',100)">＋</button>
+        </div>
+        <div class="hint" id="foundLaborHint"></div>
+      </div>
+      <div class="card-title gap">⑦ 利益率</div>
+      <div class="mg-btns" id="fenceMgBtns">
+        <button class="mg-btn" data-v="0"  onclick="setMg('fence',0)">なし</button>
+        <button class="mg-btn" data-v="10" onclick="setMg('fence',10)">10%</button>
+        <button class="mg-btn" data-v="15" onclick="setMg('fence',15)">15%</button>
+        <button class="mg-btn" data-v="20" onclick="setMg('fence',20)">20%</button>
+        <button class="mg-btn" data-v="25" onclick="setMg('fence',25)">25%</button>
+        <button class="mg-btn" data-v="30" onclick="setMg('fence',30)">30%</button>
+        <input class="mg-custom" type="number" id="fenceMgCustom" placeholder="任意%" inputmode="decimal" oninput="setMgCustom('fence')">
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- 基礎単体タブ -->
@@ -231,47 +324,6 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       <button class="mg-btn" data-v="25" onclick="setMg('found',25)">25%</button>
       <button class="mg-btn" data-v="30" onclick="setMg('found',30)">30%</button>
       <input class="mg-custom" type="number" id="foundMgCustom" placeholder="任意%" inputmode="decimal" oninput="setMgCustom('found')">
-    </div>
-  </div>
-</div>
-
-<!-- 製品工事タブ -->
-<div id="tab-product" class="tab-panel">
-  <div class="card">
-    <div class="card-title">① 工種</div>
-    <div id="productTypeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
-  </div>
-  <div class="card step" id="step-product">
-    <div class="card-title">② 品名・規格（任意）</div>
-    <div class="field"><input type="text" id="productName" placeholder="メーカー名・品番など"></div>
-    <div class="card-title gap">③ 数量（<span id="productUnitLabel2">個</span>）</div>
-    <div class="m-ctrl">
-      <button class="m-ctrl-btn" onclick="chg('productQty',-1)">−</button>
-      <input type="number" id="productQty" value="1" inputmode="decimal">
-      <button class="m-ctrl-btn" onclick="chg('productQty',1)">＋</button>
-    </div>
-    <div class="card-title gap">④ 仕入単価（円/<span id="productUnitLabel">個</span>）</div>
-    <div class="m-ctrl">
-      <button class="m-ctrl-btn" onclick="chg('productCost',-1000)">−</button>
-      <input type="number" id="productCost" value="0" inputmode="numeric">
-      <button class="m-ctrl-btn" onclick="chg('productCost',1000)">＋</button>
-    </div>
-    <div class="card-title gap">⑤ 施工費（円/<span id="productLaborUnitLabel">個</span>）</div>
-    <div class="m-ctrl">
-      <button class="m-ctrl-btn" onclick="chg('productLabor',-500)">−</button>
-      <input type="number" id="productLabor" value="0" inputmode="numeric">
-      <button class="m-ctrl-btn" onclick="chg('productLabor',500)">＋</button>
-    </div>
-    <div class="hint" id="productLossHint"></div>
-    <div class="card-title gap">⑥ 利益率</div>
-    <div class="mg-btns" id="productMgBtns">
-      <button class="mg-btn" data-v="0"  onclick="setMg('product',0)">なし</button>
-      <button class="mg-btn" data-v="10" onclick="setMg('product',10)">10%</button>
-      <button class="mg-btn" data-v="15" onclick="setMg('product',15)">15%</button>
-      <button class="mg-btn" data-v="20" onclick="setMg('product',20)">20%</button>
-      <button class="mg-btn" data-v="25" onclick="setMg('product',25)">25%</button>
-      <button class="mg-btn" data-v="30" onclick="setMg('product',30)">30%</button>
-      <input class="mg-custom" type="number" id="productMgCustom" placeholder="任意%" inputmode="decimal" oninput="setMgCustom('product')">
     </div>
   </div>
 </div>
@@ -439,22 +491,206 @@ const PRODUCT_TYPES=[
   {id:'guard2',   label:'ガードレール　建込み',  unit:'m',  laborDef:1680,  hasLoss:true},
 ];
 
+const CATEGORIES={
+  fence:{
+    label:'フェンス',
+    subtypes:[
+      {id:'fence-nofound',  label:'基礎なし',     unit:'m', laborDef:2300, hasLoss:true, hasFound:false},
+      {id:'fence-matfound', label:'基礎材料あり', unit:'m', laborDef:2300, hasLoss:true, hasFound:'mat'},
+      {id:'fence-withfound',label:'基礎あり',     unit:'m', laborDef:2300, hasLoss:true, hasFound:'full'},
+      {id:'fence-spec',     label:'規格品(G10等)',unit:'m', laborDef:2300, hasLoss:true, hasFound:false},
+    ],
+    makers:['積水樹脂','朝日スチール','四国化成','YKK AP','LIXIL','三協アルミ'],
+  },
+  gate:{
+    label:'門扉',
+    subtypes:[
+      {id:'gate-nofound',  label:'基礎なし',     unit:'基', laborDef:23000, hasLoss:false, hasFound:false},
+      {id:'gate-matfound', label:'基礎材料あり', unit:'基', laborDef:23000, hasLoss:false, hasFound:'mat'},
+      {id:'gate-withfound',label:'基礎あり',     unit:'基', laborDef:26450, hasLoss:false, hasFound:'full'},
+      {id:'slide',         label:'引戸・ノンレール', unit:'箇所', laborDef:57500, hasLoss:false, hasFound:false},
+    ],
+    makers:['四国化成','YKK AP','LIXIL','三協アルミ','文化シヤッター'],
+  },
+  bollard:{
+    label:'バリカー',
+    subtypes:[
+      {id:'bollard-found',    label:'独立基礎', unit:'基', laborDef:5750,  hasLoss:false, hasFound:'full'},
+      {id:'bollard-concrete', label:'現場打ち', unit:'基', laborDef:12650, hasLoss:false, hasFound:false},
+    ],
+    makers:['積水樹脂','サンポール','日鉄','朝日スチール'],
+  },
+  other:{
+    label:'その他',
+    subtypes:[
+      {id:'roof',        label:'屋根工事',              unit:'棟', laborDef:57500, hasLoss:false, hasFound:false},
+      {id:'mirror',      label:'ミラー',                unit:'基', laborDef:17250, hasLoss:false, hasFound:false},
+      {id:'bikerack',    label:'駐輪ラック',            unit:'台', laborDef:1725,  hasLoss:false, hasFound:false},
+      {id:'postcone',    label:'ポストコーン',          unit:'本', laborDef:2300,  hasLoss:false, hasFound:false},
+      {id:'crossfence',  label:'横断防止柵',            unit:'m',  laborDef:1863,  hasLoss:false, hasFound:false},
+      {id:'pavefence',   label:'ペーブフェンス基礎なし',unit:'m',  laborDef:1725,  hasLoss:true,  hasFound:false},
+      {id:'pavefence-f', label:'ペーブフェンス基礎あり',unit:'m',  laborDef:1725,  hasLoss:true,  hasFound:'full'},
+      {id:'guard1',      label:'ガードレール打込み',    unit:'m',  laborDef:1725,  hasLoss:true,  hasFound:false},
+      {id:'guard2',      label:'ガードレール建込み',    unit:'m',  laborDef:1680,  hasLoss:true,  hasFound:false},
+    ],
+    makers:['日鉄','積水樹脂','朝日スチール','サンポール','ナスタ'],
+  },
+};
+
 // ===== 状態 =====
 let currentTab='fence';
 let selMaker=null,selSeries=null,selFence=null;
 let selFenceFound=null,foundWithFence=null;
 let selFoundOnly=null;
 let selProductType=null;
-let mg={fence:0,found:0,custom:0,product:0};
+let selSubtype=null,selProdMaker=null,selProdFound=null;
+let pricingMode='shikiri';
+let mg={fence:0,found:0,custom:0,product:0,prod2:0};
 var groups=[]; // 追加済み品目グループ（saved-stateスクリプトから上書きできるようvarで宣言）
 
 // ===== タブ =====
+const PROD_TABS=['fence','gate','bollard','other'];
 function switchTab(t){
   currentTab=t;
-  ['fence','product','foundation','custom'].forEach((n,i)=>{
+  ['fence','gate','bollard','other','foundation','custom'].forEach((n,i)=>{
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n===t);
-    document.getElementById('tab-'+n).classList.toggle('show',n===t);
   });
+  const isProd=PROD_TABS.includes(t);
+  document.getElementById('tab-product-form').classList.toggle('show',isProd);
+  document.getElementById('tab-foundation').classList.toggle('show',t==='foundation');
+  document.getElementById('tab-custom').classList.toggle('show',t==='custom');
+  if(isProd)initProductTab(t);
+}
+
+// ===== 製品共通フォーム =====
+function initProductTab(cat){
+  selSubtype=null;selProdMaker=null;selProdFound=null;
+  const catDef=CATEGORIES[cat];
+  const titleEl=document.getElementById('subtypeSectionTitle');
+  if(titleEl)titleEl.textContent=`① ${catDef.label} 工種`;
+  renderSubtypeGrid(cat);
+  const stepProd=document.getElementById('step-prod');
+  if(stepProd)stepProd.classList.remove('show');
+  document.getElementById('normalProdForm').style.display='block';
+  document.getElementById('specFenceForm').style.display='none';
+}
+
+function renderSubtypeGrid(cat){
+  const catDef=CATEGORIES[cat];if(!catDef)return;
+  const g=document.getElementById('subtypeGrid');if(!g)return;
+  g.innerHTML='';
+  catDef.subtypes.forEach(st=>{
+    const b=document.createElement('button');
+    b.className='sel-btn'+(selSubtype&&selSubtype.id===st.id?' active':'');
+    b.textContent=st.label;
+    b.onclick=()=>{
+      selSubtype=st;selProdFound=null;
+      renderSubtypeGrid(cat);
+      if(st.id==='fence-spec'){
+        document.getElementById('normalProdForm').style.display='none';
+        document.getElementById('specFenceForm').style.display='block';
+        selMaker=null;selSeries=null;selFence=null;selFenceFound=null;foundWithFence=null;
+        document.getElementById('step-series').classList.remove('show');
+        document.getElementById('step-height').classList.remove('show');
+        document.getElementById('step-m').classList.remove('show');
+        document.getElementById('found-section').style.display='none';
+        renderMakerGrid();
+      } else {
+        document.getElementById('normalProdForm').style.display='block';
+        document.getElementById('specFenceForm').style.display='none';
+        document.getElementById('step-prod').classList.add('show');
+        ['prodUnitLabel','prodUnitLabel2','prodLaborUnitLabel'].forEach(id=>{
+          const el=document.getElementById(id);if(el)el.textContent=st.unit;
+        });
+        document.getElementById('prodLabor').value=st.laborDef;
+        const lossHint=document.getElementById('prodLossHint');
+        if(lossHint)lossHint.textContent=st.hasLoss?'※材料ロス5%を原価に自動加算します':'';
+        document.getElementById('prodFoundSect').style.display=st.hasFound?'block':'none';
+        document.getElementById('prodFoundLaborSect').style.display=st.hasFound==='full'?'block':'none';
+        const mgLabel=document.getElementById('mgProdStepLabel');
+        if(mgLabel)mgLabel.textContent=(st.hasFound?'⑧':'⑦')+' 利益率';
+        renderProdFoundGrid();
+        document.getElementById('prodFoundQty').value=1;
+        document.getElementById('prodFoundQtyHint').textContent='';
+        renderMakerPresets(cat);
+      }
+    };
+    g.appendChild(b);
+  });
+}
+
+function renderMakerPresets(cat){
+  const catDef=CATEGORIES[cat];if(!catDef)return;
+  const g=document.getElementById('makerPresetGrid');if(!g)return;
+  g.innerHTML='';
+  catDef.makers.forEach(maker=>{
+    const b=document.createElement('button');
+    b.className='sel-btn'+(selProdMaker===maker?' active':'');
+    b.textContent=maker;
+    b.onclick=()=>{
+      selProdMaker=maker;
+      document.getElementById('prodMakerInput').value=maker;
+      renderMakerPresets(cat);
+    };
+    g.appendChild(b);
+  });
+}
+
+function setPriceMode(mode){
+  pricingMode=mode;
+  document.getElementById('modeTeikaBt').classList.toggle('active',mode==='teika');
+  document.getElementById('modeShikiriBt').classList.toggle('active',mode==='shikiri');
+  document.getElementById('teikaSect').style.display=mode==='teika'?'block':'none';
+  document.getElementById('shikiriSect').style.display=mode==='shikiri'?'block':'none';
+}
+
+function calcShikiriFromTeika(){
+  const teika=parseFloat(document.getElementById('teikaVal').value)||0;
+  const kaku=parseFloat(document.getElementById('kakuritsuVal').value)||0;
+  const hint=document.getElementById('shikiriCalcHint');
+  if(teika>0&&kaku>0){
+    hint.textContent=`仕切り: ¥${Math.round(teika*(kaku/100)).toLocaleString()}`;
+  } else {
+    hint.textContent='仕切り: —';
+  }
+}
+
+function getShikiriVal(){
+  if(pricingMode==='teika'){
+    const teika=parseFloat(document.getElementById('teikaVal').value)||0;
+    const kaku=parseFloat(document.getElementById('kakuritsuVal').value)||0;
+    return Math.round(teika*(kaku/100));
+  }
+  return parseFloat(document.getElementById('shikiriVal').value)||0;
+}
+
+function renderProdFoundGrid(){
+  const g=document.getElementById('prodFoundGrid');if(!g)return;
+  g.innerHTML='';
+  FOUND_MASTER.forEach(p=>{
+    const b=document.createElement('button');
+    b.className='sel-btn'+(selProdFound&&selProdFound.id===p.id?' active':'');
+    b.innerHTML=`□${p.name}<small>¥${p.shikiri.toLocaleString()}</small>`;
+    b.style.fontSize='10px';
+    b.onclick=()=>{
+      selProdFound=p;
+      const labEl=document.getElementById('prodFoundLabor');
+      if(labEl)labEl.value=p.defLabor;
+      renderProdFoundGrid();
+    };
+    g.appendChild(b);
+  });
+}
+
+function updateProdFoundHint(){
+  if(!selSubtype)return;
+  const hint=document.getElementById('prodFoundQtyHint');if(!hint)return;
+  const qty=parseFloat(document.getElementById('prodQty').value)||0;
+  if(selSubtype.unit==='m'&&qty>0){
+    hint.textContent=`参考：${qty}m ÷ 2 + 1 = ${Math.ceil(qty/2)+1}個`;
+  } else {
+    hint.textContent='';
+  }
 }
 
 // ===== 製品工事 =====
@@ -602,6 +838,7 @@ function chg(id,d){
   if(id==='fenceLabor')updateFenceLaborHint();
   if(id==='foundLabor')updateFoundLaborHint();
   if(id==='foundOnlyLabor')updateFoundOnlyLaborHint();
+  if(id==='prodQty'||id==='prodFoundQty')updateProdFoundHint();
 }
 function setMg(type,v){
   mg[type]=v;
@@ -613,7 +850,7 @@ function setMgCustom(type){
   mg[type]=isNaN(v)?0:v;
   document.querySelectorAll(`#${type}MgBtns .mg-btn`).forEach(b=>b.classList.remove('active'));
 }
-['fence','found','custom','product'].forEach(t=>setMg(t,0));
+['fence','found','custom','product','prod2'].forEach(t=>setMg(t,0));
 
 // ===== 計算ヘルパー =====
 const fmt=n=>'¥'+Math.round(n).toLocaleString();
@@ -659,37 +896,86 @@ function calcFenceGroup(fence, m, fenceLaborPerM, found, foundQty, foundLabor, m
 
 // ===== 品目追加 =====
 function addItem(){
-  if(currentTab==='fence'){
-    if(!selFence){alert('高さまで選択してください');return;}
-    const m=parseFloat(document.getElementById('fenceM').value)||0;
-    if(m<=0){alert('延長を入力してください');return;}
-    if(foundWithFence===null){alert('基礎込み / 基礎なし を選択してください');return;}
-    if(foundWithFence&&!selFenceFound){alert('基礎サイズを選択してください');return;}
-    const foundQty=foundWithFence?Math.ceil(m/2)+1:0;
-    const foundLaborBase=foundWithFence?(parseFloat(document.getElementById('foundLabor').value)||0):0;
-    const foundLabor=Math.round(foundLaborBase*1.15);
-    const fenceLaborBase=parseFloat(document.getElementById('fenceLabor').value)||selFence.height;
-    const fenceLaborPerM=Math.round(fenceLaborBase*1.15);
-    const margin=mg.fence;
-    const res=calcFenceGroup(selFence,m,fenceLaborPerM,foundWithFence?selFenceFound:null,foundQty,foundLabor,margin);
-
-    const withFoundLabel=foundWithFence?` 基礎込み □${selFenceFound.name}`:' 基礎別';
-    const fenceNaiyaku=`${selFence.name}${withFoundLabel}`;
+  if(PROD_TABS.includes(currentTab)){
+    // 規格品（fence-spec）は旧フェンスロジック
+    if(currentTab==='fence'&&selSubtype&&selSubtype.id==='fence-spec'){
+      if(!selFence){alert('高さまで選択してください');return;}
+      const m=parseFloat(document.getElementById('fenceM').value)||0;
+      if(m<=0){alert('延長を入力してください');return;}
+      if(foundWithFence===null){alert('基礎込み / 基礎なし を選択してください');return;}
+      if(foundWithFence&&!selFenceFound){alert('基礎サイズを選択してください');return;}
+      const foundQty=foundWithFence?Math.ceil(m/2)+1:0;
+      const foundLaborBase=foundWithFence?(parseFloat(document.getElementById('foundLabor').value)||0):0;
+      const foundLabor=Math.round(foundLaborBase*1.15);
+      const fenceLaborBase=parseFloat(document.getElementById('fenceLabor').value)||selFence.height;
+      const fenceLaborPerM=Math.round(fenceLaborBase*1.15);
+      const margin=mg.fence;
+      const res=calcFenceGroup(selFence,m,fenceLaborPerM,foundWithFence?selFenceFound:null,foundQty,foundLabor,margin);
+      const withFoundLabel=foundWithFence?` 基礎込み □${selFenceFound.name}`:' 基礎別';
+      groups.push({
+        id:Date.now(), type:'fence',
+        hinshuu:'メッシュフェンス', naiyaku:`${selFence.name}${withFoundLabel}`,
+        title:`${selFence.maker} ${selFence.name}${withFoundLabel}`, titleSub:`×${m}m`,
+        withFound:foundWithFence, foundName:foundWithFence?selFenceFound.name:'',
+        foundQty, foundLabor, fence:selFence, m, fenceLaborPerM, margin, res,
+        estFinal:res.finalEst, costTotal:res.totalCost,
+      });
+      renderGroups();resetToTop();
+      return;
+    }
+    // 通常製品2フォーム
+    if(!selSubtype){alert('工種を選択してください');return;}
+    const maker=document.getElementById('prodMakerInput').value.trim();
+    const spec=document.getElementById('prodSpecInput').value.trim();
+    const qty=parseFloat(document.getElementById('prodQty').value)||0;
+    const shikiri=getShikiriVal();
+    const laborUnit=parseFloat(document.getElementById('prodLabor').value)||0;
+    if(qty<=0){alert('数量を入力してください');return;}
+    if(shikiri<=0){alert('仕入単価を入力してください');return;}
+    const matCost=shikiri*qty;
+    const lossCost=selSubtype.hasLoss?matCost*0.05:0;
+    const labCost=laborUnit*qty;
+    let foundMatCost=0,foundLabCost=0,foundName='',foundQty=0,foundLaborUnit=0;
+    if(selSubtype.hasFound){
+      if(!selProdFound){alert('基礎サイズを選択してください');return;}
+      foundQty=parseFloat(document.getElementById('prodFoundQty').value)||0;
+      if(foundQty<=0){alert('基礎数量を入力してください');return;}
+      foundName=selProdFound.name;
+      foundMatCost=selProdFound.shikiri*foundQty;
+      if(selSubtype.hasFound==='full'){
+        foundLaborUnit=parseFloat(document.getElementById('prodFoundLabor').value)||0;
+        foundLabCost=foundLaborUnit*foundQty;
+      }
+    }
+    const totalCost=matCost+lossCost+labCost+foundMatCost+foundLabCost;
+    const margin=mg.prod2;
+    const costPerUnit=totalCost/qty;
+    const sellPerUnit=margin>0&&margin<100?costPerUnit/(1-margin/100):costPerUnit;
+    const estPerUnit=ceilK(sellPerUnit,100);
+    const estTotal=Math.round(estPerUnit*qty);
+    const discount=estTotal%10000;
+    const finalEst=estTotal-discount;
+    const profit=finalEst-totalCost;
+    const profitRate=finalEst>0?profit/finalEst*100:0;
+    const makerSpec=[maker,spec].filter(Boolean).join(' ');
     groups.push({
-      id:Date.now(), type:'fence',
-      hinshuu:'メッシュフェンス',      // 品種
-      naiyaku: fenceNaiyaku,           // 内訳
-      title:`${selFence.maker} ${selFence.name}${withFoundLabel}`,
-      titleSub:`×${m}m`,
-      withFound:foundWithFence,
-      foundName:foundWithFence?selFenceFound.name:'',
-      foundQty,foundLabor,
-      fence:selFence, m, fenceLaborPerM, margin, res,
-      estFinal:res.finalEst,
-      costTotal:res.totalCost,
+      id:Date.now(), type:'product2',
+      categoryId:currentTab, subtypeId:selSubtype.id,
+      koushuu:selSubtype.label, hinshuu:selSubtype.label,
+      naiyaku:makerSpec, maker, spec,
+      unit:selSubtype.unit, hasLoss:selSubtype.hasLoss, hasFound:selSubtype.hasFound,
+      pricingMode,
+      teika:pricingMode==='teika'?(parseFloat(document.getElementById('teikaVal').value)||0):0,
+      kakuritsu:pricingMode==='teika'?(parseFloat(document.getElementById('kakuritsuVal').value)||0):0,
+      shikiri, laborUnit, foundName, foundQty, foundLaborUnit,
+      matCost, lossCost, labCost, foundMatCost, foundLabCost, totalCost,
+      margin, estPerUnit, estTotal, discount, finalEst, profit, profitRate,
+      estFinal:finalEst, costTotal:totalCost,
+      title:selSubtype.label,
+      titleSub:`${makerSpec?makerSpec+' ':''}×${qty}${selSubtype.unit}`,
     });
-    renderGroups();
-    resetToTop();
+    renderGroups();resetToTop();
+    return;
   }
   else if(currentTab==='foundation'){
     if(!selFoundOnly){alert('基礎サイズを選択してください');return;}
@@ -717,43 +1003,6 @@ function addItem(){
       qty, labor, mat, lab, cost, margin,
       estPerUnit, estTotal, discount, finalEst, profit, profitRate,
       estFinal:finalEst, costTotal:cost,
-    });
-    renderGroups();
-    resetToTop();
-  }
-  else if(currentTab==='product'){
-    if(!selProductType){alert('工種を選択してください');return;}
-    const name=document.getElementById('productName').value.trim();
-    const qty=parseFloat(document.getElementById('productQty').value)||0;
-    const costUnit=parseFloat(document.getElementById('productCost').value)||0;
-    const laborUnit=parseFloat(document.getElementById('productLabor').value)||0;
-    if(qty<=0){alert('数量を入力してください');return;}
-    const matCost=costUnit*qty;
-    const lossCost=selProductType.hasLoss?matCost*0.05:0;
-    const labCost=laborUnit*qty;
-    const cost=matCost+lossCost+labCost;
-    const margin=mg.product;
-    const totalPerUnit=cost/qty;
-    const sellPerUnit=margin>0&&margin<100?totalPerUnit/(1-margin/100):totalPerUnit;
-    const estPerUnit=ceilK(sellPerUnit,100);
-    const estTotal=Math.round(estPerUnit*qty);
-    const discount=estTotal%10000;
-    const finalEst=estTotal-discount;
-    const profit=finalEst-cost;
-    const profitRate=finalEst>0?profit/finalEst*100:0;
-    groups.push({
-      id:Date.now(),type:'product',
-      koushuuId:selProductType.id,
-      koushuu:selProductType.label,
-      hinshuu:selProductType.label,
-      naiyaku:name,
-      unit:selProductType.unit,
-      hasLoss:selProductType.hasLoss,
-      qty,costUnit,laborUnit,matCost,lossCost,labCost,cost,margin,
-      estPerUnit,estTotal,discount,finalEst,profit,profitRate,
-      estFinal:finalEst,costTotal:cost,
-      title:selProductType.label,
-      titleSub:(name?name+' ':'')+`×${qty}${selProductType.unit}`,
     });
     renderGroups();
     resetToTop();
@@ -812,7 +1061,7 @@ function makeCard(g){
   } else if(g.type==='foundation'){
     calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}個 = ¥${g.estTotal.toLocaleString()}`;
     profitText=`粗利 ${g.profitRate.toFixed(1)}%`;
-  } else if(g.type==='product'){
+  } else if(g.type==='product'||g.type==='product2'){
     calcText=`¥${g.estPerUnit.toLocaleString()} × ${g.qty}${g.unit} = ¥${g.estTotal.toLocaleString()}`;
     profitText=`粗利 ${g.profitRate.toFixed(1)}%`;
   } else {
@@ -859,6 +1108,24 @@ function makeCard(g){
       <div class="detail-total-row">
         <div class="detail-total-label">合計原価</div>
         <div class="detail-total-val">${fmt(g.cost)}</div>
+      </div>`;
+  } else if(g.type==='product2'){
+    const lossRow=g.hasLoss?`<div class="detail-row"><div class="detail-label">材料ロス（5%）</div><div class="detail-cost">${fmt(g.lossCost)}</div></div>`:'';
+    const shikiriInfo=g.pricingMode==='teika'?`定価¥${g.teika.toLocaleString()}×${g.kakuritsu}%=¥${g.shikiri.toLocaleString()}`:`¥${g.shikiri.toLocaleString()}`;
+    const foundRows=g.foundName?`
+      <div class="detail-sep"></div>
+      <div class="detail-sep-label">独立基礎 □${g.foundName} ×${g.foundQty}個</div>
+      <div class="detail-row"><div class="detail-label">基礎材料費</div><div class="detail-cost">${fmt(g.foundMatCost)}</div></div>
+      ${g.foundLaborUnit>0?`<div class="detail-row"><div class="detail-label">基礎施工費（¥${g.foundLaborUnit.toLocaleString()}/個）</div><div class="detail-cost">${fmt(g.foundLabCost)}</div></div>`:''}`:'';
+    detailHTML=`
+      <div class="detail-col-hd"><span>原価内訳</span><span>原価</span></div>
+      <div class="detail-row"><div class="detail-label">仕入（${shikiriInfo}/${g.unit} × ${g.qty}${g.unit}）</div><div class="detail-cost">${fmt(g.matCost)}</div></div>
+      ${lossRow}
+      <div class="detail-row"><div class="detail-label">施工費（¥${g.laborUnit.toLocaleString()}/${g.unit} × ${g.qty}${g.unit}）</div><div class="detail-cost">${fmt(g.labCost)}</div></div>
+      ${foundRows}
+      <div class="detail-total-row">
+        <div class="detail-total-label">合計原価</div>
+        <div class="detail-total-val">${fmt(g.totalCost)}</div>
       </div>`;
   } else {
     detailHTML=`
@@ -947,22 +1214,55 @@ function editGroup(id){
     restoreMg('found',g.margin||0);
   }
   else if(g.type==='product'){
-    switchTab('product');
-    selProductType=PRODUCT_TYPES.find(p=>p.id===g.koushuuId)||null;
-    renderProductTypeGrid();
-    if(selProductType){
-      document.getElementById('step-product').classList.add('show');
-      ['productUnitLabel','productUnitLabel2','productLaborUnitLabel'].forEach(id=>{
-        const el=document.getElementById(id);if(el)el.textContent=selProductType.unit;
+    // 旧型データの互換性（type:'product'は新フォームで編集できないため手入力タブへ）
+    switchTab('custom');
+    document.getElementById('customName').value=g.koushuu||g.hinshuu||'';
+    document.getElementById('customCost').value=Math.round(g.costUnit||0);
+    document.getElementById('customQty').value=g.qty;
+    document.getElementById('customUnit').value=g.unit||'式';
+    restoreMg('custom',g.margin||0);
+  }
+  else if(g.type==='product2'){
+    switchTab(g.categoryId);
+    const catDef=CATEGORIES[g.categoryId];
+    selSubtype=catDef?catDef.subtypes.find(st=>st.id===g.subtypeId)||null:null;
+    renderSubtypeGrid(g.categoryId);
+    if(selSubtype&&selSubtype.id!=='fence-spec'){
+      document.getElementById('normalProdForm').style.display='block';
+      document.getElementById('specFenceForm').style.display='none';
+      document.getElementById('step-prod').classList.add('show');
+      ['prodUnitLabel','prodUnitLabel2','prodLaborUnitLabel'].forEach(id=>{
+        const el=document.getElementById(id);if(el)el.textContent=selSubtype.unit;
       });
-      const hint=document.getElementById('productLossHint');
-      if(hint)hint.textContent=selProductType.hasLoss?'※材料ロス5%を原価に自動加算します':'';
+      const lossHint=document.getElementById('prodLossHint');
+      if(lossHint)lossHint.textContent=selSubtype.hasLoss?'※材料ロス5%を原価に自動加算します':'';
+      document.getElementById('prodFoundSect').style.display=selSubtype.hasFound?'block':'none';
+      document.getElementById('prodFoundLaborSect').style.display=selSubtype.hasFound==='full'?'block':'none';
+      const mgLabel=document.getElementById('mgProdStepLabel');
+      if(mgLabel)mgLabel.textContent=(selSubtype.hasFound?'⑧':'⑦')+' 利益率';
     }
-    document.getElementById('productName').value=g.naiyaku||'';
-    document.getElementById('productQty').value=g.qty;
-    document.getElementById('productCost').value=g.costUnit;
-    document.getElementById('productLabor').value=g.laborUnit;
-    restoreMg('product',g.margin||0);
+    selProdMaker=g.maker||null;
+    document.getElementById('prodMakerInput').value=g.maker||'';
+    renderMakerPresets(g.categoryId);
+    document.getElementById('prodSpecInput').value=g.spec||'';
+    document.getElementById('prodQty').value=g.qty;
+    setPriceMode(g.pricingMode||'shikiri');
+    if(g.pricingMode==='teika'){
+      document.getElementById('teikaVal').value=g.teika||'';
+      document.getElementById('kakuritsuVal').value=g.kakuritsu||'';
+      calcShikiriFromTeika();
+    } else {
+      document.getElementById('shikiriVal').value=g.shikiri||0;
+    }
+    document.getElementById('prodLabor').value=g.laborUnit||0;
+    if(g.foundName){
+      selProdFound=FOUND_MASTER.find(f=>f.name===g.foundName)||null;
+      renderProdFoundGrid();
+      document.getElementById('prodFoundQty').value=g.foundQty||1;
+      document.getElementById('prodFoundLabor').value=g.foundLaborUnit||0;
+      updateProdFoundHint();
+    }
+    restoreMg('prod2',g.margin||0);
   }
   else if(g.type==='custom'){
     switchTab('custom');
@@ -1004,19 +1304,27 @@ function resetToTop(){
   safe('customQty',el=>el.value='');
   safe('customUnit',el=>el.value='');
 
-  selProductType=null;
-  renderProductTypeGrid();
-  safe('step-product',el=>el.classList.remove('show'));
-  safe('productName',el=>el.value='');
-  safe('productQty',el=>el.value=1);
-  safe('productCost',el=>el.value=0);
-  safe('productLabor',el=>el.value=0);
-  safe('productLossHint',el=>el.textContent='');
-  ['productUnitLabel','productUnitLabel2','productLaborUnitLabel'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.textContent='個';
-  });
+  selSubtype=null;selProdMaker=null;selProdFound=null;pricingMode='shikiri';
+  safe('step-prod',el=>el.classList.remove('show'));
+  safe('prodMakerInput',el=>el.value='');
+  safe('prodSpecInput',el=>el.value='');
+  safe('prodQty',el=>el.value=1);
+  safe('prodLabor',el=>el.value=0);
+  safe('prodLossHint',el=>el.textContent='');
+  safe('shikiriVal',el=>el.value=0);
+  safe('teikaVal',el=>el.value='');
+  safe('kakuritsuVal',el=>el.value='');
+  safe('shikiriCalcHint',el=>el.textContent='仕切り: —');
+  safe('prodFoundSect',el=>el.style.display='none');
+  safe('prodFoundQty',el=>el.value=1);
+  safe('prodFoundLabor',el=>el.value=0);
+  safe('prodFoundQtyHint',el=>el.textContent='');
+  safe('modeTeikaBt',el=>el.classList.remove('active'));
+  safe('modeShikiriBt',el=>el.classList.add('active'));
+  safe('teikaSect',el=>el.style.display='none');
+  safe('shikiriSect',el=>el.style.display='block');
 
-  ['fence','found','custom','product'].forEach(t=>setMg(t,0));
+  ['fence','found','custom','product','prod2'].forEach(t=>setMg(t,0));
   switchTab('fence');
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1056,6 +1364,13 @@ function renderGrand(){
       productTotals[k]=(productTotals[k]||0)+g.matCost;
       if(g.hasLoss)lossTotal+=g.lossCost;
       laborTotal+=g.labCost;
+    } else if(g.type==='product2'){
+      const k=g.maker?`${g.koushuu}（${g.maker}）`:g.koushuu;
+      productTotals[k]=(productTotals[k]||0)+g.matCost;
+      if(g.hasLoss)lossTotal+=g.lossCost;
+      laborTotal+=g.labCost;
+      if(g.foundMatCost)foundMatTotal+=g.foundMatCost;
+      if(g.foundLabCost)laborTotal+=g.foundLabCost;
     } else if(g.type==='custom'){
       customTotal+=g.cost;
     }
@@ -1369,10 +1684,8 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
 }
 
 // ===== 初期化 =====
-renderMakerGrid();
-renderFenceFoundGrid();
+initProductTab('fence');
 renderFoundOnlyGrid();
-renderProductTypeGrid();
 
 // 保存ファイルから開いた場合の状態復元
 // saved-stateは</head>内に注入されるため、body末尾のこのスクリプト実行時には既にDOM上にある
