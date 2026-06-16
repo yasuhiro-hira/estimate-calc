@@ -968,7 +968,7 @@ function addItem(){
       categoryId:currentTab, subtypeId:selSubtype.id,
       koushuu:selSubtype.label, hinshuu:selSubtype.label,
       naiyaku:makerSpec, maker, spec,
-      unit:selSubtype.unit, hasLoss:selSubtype.hasLoss, hasFound:selSubtype.hasFound,
+      qty, unit:selSubtype.unit, hasLoss:selSubtype.hasLoss, hasFound:selSubtype.hasFound,
       pricingMode,
       teika:pricingMode==='teika'?(parseFloat(document.getElementById('teikaVal').value)||0):0,
       kakuritsu:pricingMode==='teika'?(parseFloat(document.getElementById('kakuritsuVal').value)||0):0,
