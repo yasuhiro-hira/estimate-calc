@@ -594,7 +594,10 @@ function renderSubtypeGrid(cat){
         document.getElementById('step-height').classList.remove('show');
         document.getElementById('step-m').classList.remove('show');
         document.getElementById('found-section').style.display='none';
+        document.getElementById('foundYesBtn').classList.remove('active');
+        document.getElementById('foundNoBtn').classList.remove('active');
         renderMakerGrid();
+        renderFenceFoundGrid();
       } else {
         document.getElementById('normalProdForm').style.display='block';
         document.getElementById('specFenceForm').style.display='none';
@@ -842,15 +845,17 @@ function chg(id,d){
 }
 function setMg(type,v){
   mg[type]=v;
-  document.getElementById(type+'MgCustom').value='';
+  const customEl=document.getElementById(type+'MgCustom');
+  if(customEl)customEl.value='';
   document.querySelectorAll(`#${type}MgBtns .mg-btn`).forEach(b=>b.classList.toggle('active',parseInt(b.dataset.v)===v));
 }
 function setMgCustom(type){
-  const v=parseFloat(document.getElementById(type+'MgCustom').value);
+  const customEl=document.getElementById(type+'MgCustom');
+  const v=parseFloat(customEl?customEl.value:'');
   mg[type]=isNaN(v)?0:v;
   document.querySelectorAll(`#${type}MgBtns .mg-btn`).forEach(b=>b.classList.remove('active'));
 }
-['fence','found','custom','product','prod2'].forEach(t=>setMg(t,0));
+['fence','found','custom','prod2'].forEach(t=>setMg(t,0));
 
 // ===== 計算ヘルパー =====
 const fmt=n=>'¥'+Math.round(n).toLocaleString();
