@@ -1019,7 +1019,7 @@ function calcFenceGroup(fence, m, fenceLaborPerM, found, foundQty, foundLabor, m
 function addItem(){
   if(PROD_TABS.includes(currentTab)){
     // 規格品（fence-spec）は旧フェンスロジック
-    if(currentTab==='fence'&&selSubtype&&selSubtype.id==='fence-spec'){
+    if(selSubtype&&selSubtype.id==='fence-spec'){
       if(!selFence){alert('高さまで選択してください');return;}
       const m=parseFloat(document.getElementById('fenceM').value)||0;
       if(m<=0){alert('延長を入力してください');return;}
@@ -2043,7 +2043,7 @@ async function importFromExcel(file,status){
     const row=importRawRows[r].map(c=>String(c||'').trim());
     let f={name:-1,spec:-1,qty:-1,unit:-1};
     for(let c=0;c<row.length;c++){
-      if(/種別|品種|細別|内訳/.test(row[c])&&f.name<0)f.name=c;
+      if(/種別|品種|細別|内訳|品名|工種|名称|摘要/.test(row[c])&&f.name<0)f.name=c;
       if(/形状|規格|寸法/.test(row[c])&&f.spec<0)f.spec=c;
       if(/数[\s　]*量/.test(row[c])&&f.qty<0)f.qty=c;
       if(/単[\s　]*位/.test(row[c])&&f.unit<0)f.unit=c;
@@ -2115,8 +2115,8 @@ function parseWithSelectedCols(){
   importRawRows.forEach(row=>{
     const name=String(row[nameCol]||'').trim();
     const spec=specCol>=0?String(row[specCol]||'').trim():'';
-    const unit=String(row[unitCol]||'').trim();
-    const numStr=String(row[qtyCol]||'').replace(/,/g,'');
+    const unit=String(row[unitCol]||'').trim().normalize('NFKC');
+    const numStr=String(row[qtyCol]||'').normalize('NFKC').replace(/[,，]/g,'').trim();
     if(!name||!PDF_UNITS.includes(unit))return;
     if(!/^\d+\.?\d*$/.test(numStr))return;
     if(PDF_REMARKS_RE.test(name))return;
