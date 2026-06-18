@@ -1760,52 +1760,144 @@ function closePdfImport(){
   document.getElementById('pdfImportModal').style.display='none';
 }
 
-async function onPdfFileSelected(file){
+async function loadScript(url){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=url; s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function onImportFileSelected(file){
   if(!file)return;
   const status=document.getElementById('pdfLoadStatus');
   status.textContent='読み込み中...';
   try{
-    // pdf.js が deferで読み込まれていなければ待つ
-    if(typeof pdfjsLib==='undefined'){
-      status.textContent='PDF.jsを初期化中...';
-      await new Promise((res,rej)=>{
-        const s=document.createElement('script');
-        s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-        s.onload=res; s.onerror=rej;
-        document.head.appendChild(s);
-      });
+    const ext=file.name.split('.').pop().toLowerCase();
+    if(ext==='pdf'){
+      await importFromPdf(file,status);
+    } else if(['xlsx','xls','xlsm'].includes(ext)){
+      await importFromExcel(file,status);
+    } else {
+      status.textContent='⚠ PDF または Excel ファイルを選択してください。';
     }
-    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    const buf=await file.arrayBuffer();
-    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
-    status.textContent=`${pdf.numPages}ページを解析中...`;
-    const allTextItems=[];
-    for(let p=1;p<=pdf.numPages;p++){
-      const page=await pdf.getPage(p);
-      const vp=page.getViewport({scale:1});
-      const tc=await page.getTextContent();
-      tc.items.forEach(it=>{
-        const str=it.str.replace(/\s+/g,' ').trim();
-        if(!str)return;
-        const x=it.transform[4];
-        const y=vp.height-it.transform[5]; // top-down
-        allTextItems.push({str,x,y,page:p});
-      });
-    }
-    pdfItems=parsePdfTextItems(allTextItems);
-    status.textContent='';
-    if(pdfItems.length===0){
-      status.textContent='⚠ 数量・単位が読み取れる行が見つかりませんでした。手動で入力してください。';
-      return;
-    }
-    renderPdfItemsTable();
-    document.getElementById('pdfStep1').style.display='none';
-    document.getElementById('pdfStep2').style.display='block';
-    document.getElementById('pdfDetectedCount').textContent=`${pdfItems.length}件を検出`;
   }catch(e){
     status.textContent='エラー: '+e.message;
     console.error(e);
   }
+}
+
+async function importFromPdf(file,status){
+  if(typeof pdfjsLib==='undefined'){
+    status.textContent='PDF.jsを初期化中...';
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+  }
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  status.textContent=`${pdf.numPages}ページを解析中...`;
+  const allTextItems=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const vp=page.getViewport({scale:1});
+    const tc=await page.getTextContent();
+    tc.items.forEach(it=>{
+      const str=it.str.replace(/\s+/g,' ').trim();
+      if(!str)return;
+      allTextItems.push({str,x:it.transform[4],y:vp.height-it.transform[5],page:p});
+    });
+  }
+  showImportResults(parsePdfTextItems(allTextItems),status);
+}
+
+async function importFromExcel(file,status){
+  if(typeof XLSX==='undefined'){
+    status.textContent='SheetJSを初期化中...';
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+  }
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array'});
+  const results=[];
+  wb.SheetNames.forEach(shName=>{
+    const sh=wb.Sheets[shName];
+    const rows=XLSX.utils.sheet_to_json(sh,{header:1,defval:''});
+    const parsed=parseExcelRows(rows);
+    parsed.forEach(it=>{if(!results.find(r=>r.name===it.name&&r.qty===it.qty&&r.unit===it.unit))results.push(it);});
+  });
+  showImportResults(results,status);
+}
+
+function parseExcelRows(rows){
+  // ヘッダー行を探して列位置を特定
+  let qtyCol=-1,unitCol=-1,nameCol=0,specCol=-1,dataStart=0;
+  for(let r=0;r<Math.min(rows.length,15);r++){
+    const row=rows[r].map(c=>String(c||'').trim());
+    for(let c=0;c<row.length;c++){
+      if(/数[\s　]*量/.test(row[c]))qtyCol=c;
+      if(/単[\s　]*位/.test(row[c]))unitCol=c;
+      if(/種別|品種|細別|内訳/.test(row[c]))nameCol=c;
+      if(/形状|規格|寸法/.test(row[c]))specCol=c;
+    }
+    if(qtyCol>=0&&unitCol>=0){dataStart=r+1;break;}
+  }
+
+  const results=[];
+  const seen=new Set();
+
+  if(qtyCol>=0&&unitCol>=0){
+    // ヘッダー検出成功 → 列指定で読む
+    for(let r=dataStart;r<rows.length;r++){
+      const row=rows[r].map(c=>String(c||'').trim());
+      const unit=row[unitCol]||'';
+      if(!PDF_UNITS.includes(unit))continue;
+      const numStr=(row[qtyCol]||'').replace(/,/g,'');
+      if(!/^\d+\.?\d*$/.test(numStr))continue;
+      const qty=parseFloat(numStr);
+      const name=(row[nameCol]||'').trim();
+      const spec=specCol>=0?(row[specCol]||'').trim():'';
+      if(!name||PDF_REMARKS_RE.test(name))continue;
+      const key=`${name}_${qty}_${unit}`;
+      if(seen.has(key))continue;
+      seen.add(key);
+      results.push({name,spec,qty,unit,shikiri:0,margin:0,selected:true});
+    }
+  } else {
+    // ヘッダー未検出 → PDF方式でスキャン
+    rows.forEach(row=>{
+      const texts=row.map(c=>String(c||'').trim()).filter(t=>t);
+      for(let i=texts.length-1;i>=1;i--){
+        if(!PDF_UNITS.includes(texts[i]))continue;
+        const numStr=texts[i-1].replace(/,/g,'');
+        if(!/^\d+\.?\d*$/.test(numStr))continue;
+        const qty=parseFloat(numStr);
+        const unit=texts[i];
+        const nameParts=texts.slice(0,i-1).filter(t=>
+          !PDF_REMARKS_RE.test(t)&&!PDF_COND_STRS.some(c=>t.startsWith(c))&&
+          t!=='数量'&&t!=='単位'&&t!=='単価'&&t!=='金額'&&t!=='摘要'
+        );
+        if(nameParts.length===0)break;
+        const key=`${nameParts[0]}_${qty}_${unit}`;
+        if(seen.has(key))break;
+        seen.add(key);
+        results.push({name:nameParts[0],spec:nameParts.slice(1).join(' '),qty,unit,shikiri:0,margin:0,selected:true});
+        break;
+      }
+    });
+  }
+  return results;
+}
+
+function showImportResults(items,status){
+  status.textContent='';
+  if(items.length===0){
+    status.textContent='⚠ 数量・単位が読み取れる行が見つかりませんでした。';
+    return;
+  }
+  pdfItems=items;
+  renderPdfItemsTable();
+  document.getElementById('pdfStep1').style.display='none';
+  document.getElementById('pdfStep2').style.display='block';
+  document.getElementById('pdfDetectedCount').textContent=`${items.length}件を検出`;
 }
 
 const PDF_UNITS=['m','m2','m3','㎡','㎥','本','箇所','か所','ヶ所','ケ所','式','個','枚','台','基','組','ヶ月','月','t','kg','kN','面','本/箇所'];
@@ -1955,10 +2047,10 @@ renderFoundOnlyGrid();
 
     <!-- Step1: ファイル選択 -->
     <div id="pdfStep1">
-      <div class="pdf-step-hint">東京都・国交省などの見積参考資料PDFを選択してください。数量・単位が記載された行を自動で抽出します。</div>
+      <div class="pdf-step-hint">東京都・国交省などの見積参考資料（PDF・Excel）を選択してください。数量・単位が記載された行を自動で抽出します。</div>
       <div class="field">
-        <label>PDFファイル</label>
-        <input type="file" id="pdfFileInput" accept=".pdf" onchange="onPdfFileSelected(this.files[0])">
+        <label>ファイル（PDF / Excel）</label>
+        <input type="file" id="pdfFileInput" accept=".pdf,.xlsx,.xls,.xlsm" onchange="onImportFileSelected(this.files[0])">
       </div>
       <div id="pdfLoadStatus" class="hint" style="margin-top:8px;min-height:18px;"></div>
     </div>
