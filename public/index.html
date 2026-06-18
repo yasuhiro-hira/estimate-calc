@@ -193,7 +193,7 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       </div>
     </div>
     <div id="catBtnRow" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
-      <button class="sel-btn cat-btn" data-cat="fence" onclick="selectCategory('fence')">🔲 フェンス</button>
+      <button class="sel-btn cat-btn" data-tab="fence-spec" onclick="switchTab('fence-spec')">🔲 フェンス</button>
       <button class="sel-btn cat-btn" data-cat="gate" onclick="selectCategory('gate')">🚪 門扉</button>
       <button class="sel-btn cat-btn" data-cat="bollard" onclick="selectCategory('bollard')">🚧 バリカー</button>
       <button class="sel-btn cat-btn" data-cat="other" onclick="selectCategory('other')">🔧 その他</button>
@@ -309,7 +309,7 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
         <input type="number" id="fenceLabor" value="0" inputmode="numeric">
         <button class="m-ctrl-btn" onclick="chg('fenceLabor',100)">＋</button>
       </div>
-      <div class="card-title gap">⑥ 基礎</div>
+      <div class="card-title gap">⑦ 基礎</div>
       <div class="col2">
         <button class="sel-btn" id="foundYesBtn" onclick="setFoundOpt(true)">基礎込み</button>
         <button class="sel-btn" id="foundNoBtn"  onclick="setFoundOpt(false)">基礎なし</button>
@@ -815,7 +815,6 @@ function renderMakerGrid(){
     b.onclick=()=>{
       selMaker=maker;selSeries=null;selFence=null;
       document.getElementById('fenceLabor').value=0;
-      document.getElementById('fenceLaborHint').textContent='';
       renderMakerGrid();renderSeriesGrid();
       document.getElementById('step-series').classList.add('show');
       document.getElementById('step-height').classList.remove('show');
