@@ -139,6 +139,12 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
 .pdf-import-table input[type=number]{text-align:right;}
 .pdf-import-table tr.checked-row{background:var(--accent-light);}
 .pdf-step-hint{font-size:12px;color:var(--text2);margin-bottom:10px;}
+.page-dropzone{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:2px dashed var(--border);border-radius:10px;padding:12px 14px;margin:10px 16px 0;background:var(--card);transition:border-color 0.15s,background 0.15s;}
+.page-dropzone.dz-over{border-color:var(--accent);background:var(--accent-light);}
+.page-dz-icon{font-size:22px;line-height:1;}
+.page-dz-text{font-size:13px;font-weight:700;color:var(--text);flex:1;min-width:100px;}
+.page-dz-btn{background:var(--accent);color:#fff;border:none;border-radius:7px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.page-dz-fname{font-size:11px;color:var(--accent);font-weight:700;width:100%;min-height:14px;}
 .import-dropzone{border:2px dashed var(--border);border-radius:12px;padding:28px 16px;text-align:center;background:var(--bg);transition:border-color 0.15s,background 0.15s;cursor:pointer;}
 .import-dropzone.dz-over{border-color:var(--accent);background:var(--accent-light);}
 .import-dz-icon{font-size:36px;margin-bottom:6px;}
@@ -158,11 +164,12 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
   <p>品目追加 → 材工基礎込みm単価 → 合計</p>
 </header>
 
-<!-- PDF読み込みボタン -->
-<div style="margin:10px 16px 0;text-align:right;">
-  <button onclick="openPdfImport()" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
-    📄 見積参考資料PDFから読み込む
-  </button>
+<!-- 常時表示ドロップゾーン -->
+<div id="pageDropZone" class="page-dropzone">
+  <span class="page-dz-icon">📂</span>
+  <span class="page-dz-text">Excelをドロップして品目読み込み</span>
+  <label class="page-dz-btn">ファイルを選択<input type="file" id="pageFileInput" accept=".xlsx,.xls,.xlsm,.pdf" style="display:none;"></label>
+  <span class="page-dz-fname" id="pageDzFname"></span>
 </div>
 
 <!-- 読み込み済み品目 待ちリスト -->
@@ -1793,6 +1800,46 @@ function openPdfImport(){
   switchImportTab('file');
 }
 
+function initPageDropZone(){
+  const dz=document.getElementById('pageDropZone');
+  if(!dz)return;
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{
+    e.preventDefault();dz.classList.add('dz-over');
+  }));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{
+    e.preventDefault();dz.classList.remove('dz-over');
+  }));
+  dz.addEventListener('drop',e=>{
+    const file=e.dataTransfer.files[0];
+    if(!file)return;
+    const fname=document.getElementById('pageDzFname');
+    if(fname)fname.textContent='📎 '+file.name;
+    openImportWithFile(file);
+  });
+  const inp=document.getElementById('pageFileInput');
+  if(inp)inp.addEventListener('change',()=>{
+    if(!inp.files[0])return;
+    const fname=document.getElementById('pageDzFname');
+    if(fname)fname.textContent='📎 '+inp.files[0].name;
+    openImportWithFile(inp.files[0]);
+    inp.value='';
+  });
+}
+
+function openImportWithFile(file){
+  document.getElementById('pdfImportModal').style.display='block';
+  document.getElementById('pdfStep1').style.display='block';
+  document.getElementById('pdfStep1b').style.display='none';
+  document.getElementById('pdfStep2').style.display='none';
+  document.getElementById('pdfLoadStatus').textContent='読み込み中...';
+  document.getElementById('pdfFileInput').value='';
+  const ta=document.getElementById('importPasteText');if(ta)ta.value='';
+  pdfItems=[];activeQueueIdx=-1;importRawRows=[];importColRoles=[];
+  const fname2=document.getElementById('importDzFname');if(fname2)fname2.textContent='';
+  initImportDropZone();
+  onImportFileSelected(file);
+}
+
 let _importDzInited=false;
 function initImportDropZone(){
   if(_importDzInited)return;
@@ -2179,6 +2226,7 @@ function renderPdfItemsTable(){
 }
 
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+initPageDropZone();
 
 function pdfToggle(i,val){
   pdfItems[i].selected=val;
