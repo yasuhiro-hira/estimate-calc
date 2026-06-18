@@ -181,13 +181,6 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
   <div id="importQueueList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
 </div>
 
-<!-- タブ -->
-<div class="tab-bar">
-  <button class="tab-btn" onclick="switchTab('fence-spec')">📐 規格品</button>
-  <button class="tab-btn" onclick="switchTab('foundation')">⬜ 独立基礎</button>
-  <button class="tab-btn" onclick="switchTab('custom')">✏️ 手入力</button>
-</div>
-
 <!-- 製品共通フォーム（フェンス/門扉/バリカー/その他/規格品） -->
 <div id="tab-product-form" class="tab-panel show">
 
@@ -204,6 +197,9 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       <button class="sel-btn cat-btn" data-cat="gate" onclick="selectCategory('gate')">🚪 門扉</button>
       <button class="sel-btn cat-btn" data-cat="bollard" onclick="selectCategory('bollard')">🚧 バリカー</button>
       <button class="sel-btn cat-btn" data-cat="other" onclick="selectCategory('other')">🔧 その他</button>
+      <button class="sel-btn cat-btn" data-tab="fence-spec" onclick="switchTab('fence-spec')">📐 規格品</button>
+      <button class="sel-btn cat-btn" data-tab="foundation" onclick="switchTab('foundation')">⬜ 独立基礎</button>
+      <button class="sel-btn cat-btn" data-tab="custom" onclick="switchTab('custom')">✏️ 手入力</button>
     </div>
   </div>
 
@@ -592,8 +588,8 @@ var groups=[]; // 追加済み品目グループ（saved-stateスクリプトか
 const PROD_TABS=['fence','gate','bollard','other','fence-spec'];
 function switchTab(t){
   currentTab=t;
-  ['fence-spec','foundation','custom'].forEach((n,i)=>{
-    document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n===t);
+  document.querySelectorAll('#catBtnRow .cat-btn').forEach(b=>{
+    b.classList.toggle('active','tab' in b.dataset ? b.dataset.tab===t : false);
   });
   const isProd=PROD_TABS.includes(t);
   document.getElementById('tab-product-form').classList.toggle('show',isProd);
@@ -609,8 +605,7 @@ function switchTab(t){
 // ===== 製品共通フォーム =====
 function selectCategory(cat){
   currentTab=cat;
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.toggle('active',b.dataset.cat===cat));
+  document.querySelectorAll('#catBtnRow .cat-btn').forEach(b=>b.classList.toggle('active',b.dataset.cat===cat));
   document.getElementById('tab-product-form').classList.add('show');
   document.getElementById('tab-foundation').classList.remove('show');
   document.getElementById('tab-custom').classList.remove('show');
@@ -628,10 +623,9 @@ function selectCategory(cat){
 
 function selectFenceSpec(){
   currentTab='fence-spec';
-  ['fence-spec','foundation','custom'].forEach((n,i)=>{
-    document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n==='fence-spec');
+  document.querySelectorAll('#catBtnRow .cat-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab==='fence-spec');
   });
-  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-product-form').classList.add('show');
   document.getElementById('tab-foundation').classList.remove('show');
   document.getElementById('tab-custom').classList.remove('show');
@@ -883,6 +877,8 @@ function updateFoundHint(){
   const qty=Math.ceil(m/2)+1;
   const el=document.getElementById('foundQtyHint');
   if(el)el.textContent=m>0?`基礎数：${m}÷2+1 = ${qty}個`:'';
+  const qtyEl=document.getElementById('foundQty');
+  if(qtyEl&&m>0)qtyEl.value=qty;
 }
 
 // ===== 基礎単体 =====
@@ -1621,13 +1617,20 @@ function genPdf(){
     const estTotal=g.type==='fence'?g.res.estTotal:g.estTotal;
     const hinshuu=g.hinshuu||(g.type==='fence'?'メッシュフェンス':g.type==='foundation'?'独立基礎':g.title);
     const naiyaku=g.type==='fence'?`${g.fence.maker} ${g.naiyaku||''}`:(g.naiyaku!==undefined?g.naiyaku:'');
-    return `<tr>
+    const mainRow=`<tr>
       <td class="ctr">${i+1}</td>
       <td>${hinshuu}</td><td>${naiyaku}</td>
       <td class="num">${qty}</td><td class="ctr">${unit}</td>
       <td class="num">${fmtN(perUnit)}</td>
       <td class="num">${fmtN(estTotal)}</td><td></td>
     </tr>`;
+    const foundRow=g.type==='fence'?`<tr style="font-size:8pt;color:#555;">
+      <td></td>
+      <td>基礎工事</td>
+      <td>${g.withFound?`□${g.foundName}込`:'含みません'}</td>
+      <td colspan="5"></td>
+    </tr>`:'';
+    return mainRow+foundRow;
   }).join('');
 
   const preTotalSum=gs.reduce((s,g)=>s+(g.type==='fence'?g.res.estTotal:g.estTotal),0);
