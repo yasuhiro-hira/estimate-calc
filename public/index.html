@@ -158,6 +158,15 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
   </button>
 </div>
 
+<!-- 読み込み済み品目 待ちリスト -->
+<div id="importQueuePanel" style="display:none;margin:8px 16px 0;padding:10px 12px;background:var(--accent-light);border:1.5px solid var(--accent);border-radius:10px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <span style="font-size:11px;font-weight:700;color:var(--accent);">📋 読み込み済み品目 — タップして品種名・数量をフォームに反映</span>
+    <button onclick="importQueue=[];activeQueueIdx=-1;renderImportQueue();" style="background:none;border:none;font-size:11px;color:var(--text2);cursor:pointer;">全削除</button>
+  </div>
+  <div id="importQueueList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+</div>
+
 <!-- タブ -->
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('fence')">🔲 フェンス</button>
@@ -1337,6 +1346,12 @@ function editGroup(id){
 
 function resetToTop(){
   const safe=(id,fn)=>{const el=document.getElementById(id);if(el)fn(el);};
+  // 待ちリストから完了済みアイテムを除去
+  if(activeQueueIdx>=0){
+    importQueue.splice(activeQueueIdx,1);
+    activeQueueIdx=-1;
+    renderImportQueue();
+  }
 
   selMaker=null;selSeries=null;selFence=null;
   selFenceFound=null;foundWithFence=null;
@@ -1747,6 +1762,8 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
 
 // ===== PDF インポート =====
 let pdfItems=[];
+let importQueue=[];   // {name,spec,qty,unit}
+let activeQueueIdx=-1;
 
 function openPdfImport(){
   document.getElementById('pdfImportModal').style.display='block';
@@ -1757,6 +1774,7 @@ function openPdfImport(){
   const ta=document.getElementById('importPasteText');
   if(ta)ta.value='';
   pdfItems=[];
+  activeQueueIdx=-1;
   switchImportTab('file');
 }
 
@@ -2021,9 +2039,7 @@ function renderPdfItemsTable(){
       <td><input type="text" value="${esc(item.name)}" oninput="pdfItems[${i}].name=this.value"></td>
       <td><input type="text" value="${esc(item.spec)}" style="color:var(--text2);" oninput="pdfItems[${i}].spec=this.value"></td>
       <td><input type="number" value="${item.qty}" inputmode="decimal" oninput="pdfItems[${i}].qty=parseFloat(this.value)||0"></td>
-      <td><input type="text" value="${esc(item.unit)}" style="text-align:center;" oninput="pdfItems[${i}].unit=this.value"></td>
-      <td><input type="number" placeholder="例: 25000" inputmode="numeric" oninput="pdfItems[${i}].shikiri=parseFloat(this.value)||0"></td>
-      <td><input type="number" placeholder="20" inputmode="decimal" oninput="pdfItems[${i}].margin=parseFloat(this.value)||0"></td>`;
+      <td><input type="text" value="${esc(item.unit)}" style="text-align:center;" oninput="pdfItems[${i}].unit=this.value"></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -2041,35 +2057,57 @@ function pdfSelectAll(val){
 }
 
 function addPdfItems(){
-  const toAdd=pdfItems.filter(it=>it.selected&&it.qty>0);
+  const toAdd=pdfItems.filter(it=>it.selected&&it.name.trim());
   if(toAdd.length===0){alert('項目を選択してください');return;}
-  toAdd.forEach((item,i)=>{
-    const costUnit=item.shikiri;
-    const qty=item.qty;
-    const margin=item.margin||0;
-    const cost=costUnit*qty;
-    const sellPerUnit=margin>0&&margin<100?costUnit/(1-margin/100):costUnit;
-    const estPerUnit=ceilK(sellPerUnit,100);
-    const estTotal=Math.round(estPerUnit*qty);
-    const discount=estTotal%10000;
-    const finalEst=estTotal-discount;
-    const profit=finalEst-cost;
-    const profitRate=finalEst>0?profit/finalEst*100:0;
-    groups.push({
-      id:Date.now()+i,
-      type:'custom',
-      hinshuu:item.name,
-      naiyaku:item.spec,
-      costUnit, qty, unit:item.unit, cost,
-      margin, estPerUnit, estTotal, discount, finalEst, profit, profitRate,
-      estFinal:finalEst, costTotal:cost,
-      title:item.name,
-      titleSub:`${item.spec?item.spec+' ':''}×${qty}${item.unit}`,
-    });
+  toAdd.forEach(item=>{
+    if(!importQueue.find(q=>q.name===item.name&&q.qty===item.qty&&q.unit===item.unit)){
+      importQueue.push({name:item.name,spec:item.spec||'',qty:item.qty,unit:item.unit});
+    }
   });
-  renderGroups();
+  renderImportQueue();
   closePdfImport();
-  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderImportQueue(){
+  const panel=document.getElementById('importQueuePanel');
+  const list=document.getElementById('importQueueList');
+  if(!panel||!list)return;
+  if(importQueue.length===0){panel.style.display='none';return;}
+  panel.style.display='block';
+  list.innerHTML='';
+  importQueue.forEach((item,i)=>{
+    const btn=document.createElement('button');
+    btn.className='sel-btn'+(i===activeQueueIdx?' active':'');
+    btn.style.cssText='display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:6px 10px;';
+    btn.innerHTML=`<span>${esc(item.name)}</span><small style="opacity:0.65">×${item.qty}${item.unit}</small>`+
+      `<span onclick="event.stopPropagation();removeQueueItem(${i})" style="margin-left:3px;font-size:13px;opacity:0.5;cursor:pointer;">✕</span>`;
+    btn.onclick=()=>loadQueueItem(i);
+    list.appendChild(btn);
+  });
+}
+
+function loadQueueItem(i){
+  activeQueueIdx=i;
+  const item=importQueue[i];
+  // 品種名を入力欄に反映
+  const hi=document.getElementById('prodHinshuuInput');
+  if(hi)hi.value=item.name;
+  const hw=document.getElementById('hinshuuInputWrap');
+  if(hw)hw.style.display='block';
+  // 数量を各フォームに反映（表示中のものだけ有効）
+  ['prodQty','customQty','foundQty','fenceM'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value=item.qty;
+  });
+  renderImportQueue();
+  window.scrollTo({top:160,behavior:'smooth'});
+}
+
+function removeQueueItem(i){
+  if(activeQueueIdx===i)activeQueueIdx=-1;
+  else if(activeQueueIdx>i)activeQueueIdx--;
+  importQueue.splice(i,1);
+  renderImportQueue();
 }
 
 // ===== 初期化 =====
@@ -2145,13 +2183,11 @@ renderFoundOnlyGrid();
             <th>形状・寸法</th>
             <th style="width:65px;">数量</th>
             <th style="width:42px;">単位</th>
-            <th style="width:115px;">仕入単価（円）</th>
-            <th style="width:72px;">利益率(%)</th>
           </tr></thead>
           <tbody id="pdfItemsTbody"></tbody>
         </table>
       </div>
-      <button class="pdf-add-btn" onclick="addPdfItems()">選択した項目を見積に追加</button>
+      <button class="pdf-add-btn" onclick="addPdfItems()">選択した品目を待ちリストに追加 →</button>
     </div>
   </div>
 </div>
