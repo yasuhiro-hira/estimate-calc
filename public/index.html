@@ -1764,10 +1764,13 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
 let pdfItems=[];
 let importQueue=[];   // {name,spec,qty,unit}
 let activeQueueIdx=-1;
+let importRawRows=[];
+let importColRoles=[];
 
 function openPdfImport(){
   document.getElementById('pdfImportModal').style.display='block';
   document.getElementById('pdfStep1').style.display='block';
+  document.getElementById('pdfStep1b').style.display='none';
   document.getElementById('pdfStep2').style.display='none';
   document.getElementById('pdfLoadStatus').textContent='';
   document.getElementById('pdfFileInput').value='';
@@ -1775,6 +1778,8 @@ function openPdfImport(){
   if(ta)ta.value='';
   pdfItems=[];
   activeQueueIdx=-1;
+  importRawRows=[];
+  importColRoles=[];
   switchImportTab('file');
 }
 
@@ -1889,12 +1894,103 @@ async function importFromExcel(file,status){
   }
   const buf=await file.arrayBuffer();
   const wb=XLSX.read(buf,{type:'array'});
+  const shName=wb.SheetNames[0];
+  const sh=wb.Sheets[shName];
+  importRawRows=XLSX.utils.sheet_to_json(sh,{header:1,defval:''});
+  if(importRawRows.length===0){
+    status.textContent='⚠ データが見つかりませんでした。';
+    return;
+  }
+  // 列数を求める（先頭15行のmax）
+  const numCols=Math.max(1,...importRawRows.slice(0,15).map(r=>Array.isArray(r)?r.length:0));
+  importColRoles=new Array(numCols).fill('');
+  // ヘッダー行を自動検出してドロップダウン初期値を設定
+  for(let r=0;r<Math.min(importRawRows.length,15);r++){
+    const row=importRawRows[r].map(c=>String(c||'').trim());
+    let f={name:-1,spec:-1,qty:-1,unit:-1};
+    for(let c=0;c<row.length;c++){
+      if(/種別|品種|細別|内訳/.test(row[c])&&f.name<0)f.name=c;
+      if(/形状|規格|寸法/.test(row[c])&&f.spec<0)f.spec=c;
+      if(/数[\s　]*量/.test(row[c])&&f.qty<0)f.qty=c;
+      if(/単[\s　]*位/.test(row[c])&&f.unit<0)f.unit=c;
+    }
+    if(f.qty>=0&&f.unit>=0){
+      if(f.name>=0)importColRoles[f.name]='name';
+      if(f.spec>=0)importColRoles[f.spec]='spec';
+      importColRoles[f.qty]='qty';
+      importColRoles[f.unit]='unit';
+      break;
+    }
+  }
+  status.textContent='';
+  showColSelector();
+}
+
+function showColSelector(){
+  document.getElementById('pdfStep1').style.display='none';
+  document.getElementById('pdfStep1b').style.display='block';
+  document.getElementById('pdfStep2').style.display='none';
+  const numCols=importColRoles.length;
+  // 列ラベル (A,B,...,Z,AA,AB...)
+  const colLabel=c=>{const a='ABCDEFGHIJKLMNOPQRSTUVWXYZ';return c<26?a[c]:a[Math.floor(c/26)-1]+a[c%26];};
+  const roleOpts=[['','— 無視'],['name','品種名'],['spec','形状・寸法'],['qty','数量'],['unit','単位']];
+  // ドロップダウン行
+  let rHtml='<tr>';
+  for(let c=0;c<numCols;c++){
+    const v=importColRoles[c]||'';
+    const opts=roleOpts.map(([rv,rl])=>`<option value="${rv}"${v===rv?' selected':''}>${rl}</option>`).join('');
+    rHtml+=`<th style="min-width:76px;padding:2px;"><select data-col="${c}" onchange="importColRoles[${c}]=this.value;updateColSelectorHighlight();" style="width:100%;font-size:11px;padding:2px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:var(--text);">${opts}</select></th>`;
+  }
+  rHtml+='</tr>';
+  // 列文字行
+  let lHtml='<tr>'+Array.from({length:numCols},(_,c)=>`<th style="text-align:center;font-size:10px;padding:1px 4px;color:var(--text2);font-weight:normal;">${colLabel(c)}</th>`).join('')+'</tr>';
+  document.getElementById('colSelectorHeader').innerHTML=rHtml+lHtml;
+  // データ行（先頭20行）
+  const preview=importRawRows.slice(0,20);
+  document.getElementById('colSelectorBody').innerHTML=preview.map(row=>
+    '<tr>'+Array.from({length:numCols},(_,c)=>{
+      const val=String(row[c]||'');
+      return `<td style="padding:2px 5px;font-size:11px;white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis;" title="${esc(val)}">${esc(val)}</td>`;
+    }).join('')+'</tr>'
+  ).join('');
+  updateColSelectorHighlight();
+}
+
+function updateColSelectorHighlight(){
+  const colors={name:'#dbeafe',spec:'#dcfce7',qty:'#ffedd5',unit:'#f3e8ff'};
+  const tbody=document.getElementById('colSelectorBody');
+  if(!tbody)return;
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    for(let c=0;c<importColRoles.length;c++){
+      if(tr.cells[c])tr.cells[c].style.background=colors[importColRoles[c]]||'';
+    }
+  });
+}
+
+function parseWithSelectedCols(){
+  const nameCol=importColRoles.indexOf('name');
+  const specCol=importColRoles.indexOf('spec');
+  const qtyCol=importColRoles.indexOf('qty');
+  const unitCol=importColRoles.indexOf('unit');
+  const status=document.getElementById('pdfStep1bStatus');
+  if(nameCol<0){status.textContent='⚠「品種名」の列を選択してください。';return;}
+  if(qtyCol<0||unitCol<0){status.textContent='⚠「数量」と「単位」の列を選択してください。';return;}
+  status.textContent='';
   const results=[];
-  wb.SheetNames.forEach(shName=>{
-    const sh=wb.Sheets[shName];
-    const rows=XLSX.utils.sheet_to_json(sh,{header:1,defval:''});
-    const parsed=parseExcelRows(rows);
-    parsed.forEach(it=>{if(!results.find(r=>r.name===it.name&&r.qty===it.qty&&r.unit===it.unit))results.push(it);});
+  const seen=new Set();
+  importRawRows.forEach(row=>{
+    const name=String(row[nameCol]||'').trim();
+    const spec=specCol>=0?String(row[specCol]||'').trim():'';
+    const unit=String(row[unitCol]||'').trim();
+    const numStr=String(row[qtyCol]||'').replace(/,/g,'');
+    if(!name||!PDF_UNITS.includes(unit))return;
+    if(!/^\d+\.?\d*$/.test(numStr))return;
+    if(PDF_REMARKS_RE.test(name))return;
+    const qty=parseFloat(numStr);
+    const key=`${name}_${qty}_${unit}`;
+    if(seen.has(key))return;
+    seen.add(key);
+    results.push({name,spec,qty,unit,shikiri:0,margin:0,selected:true});
   });
   showImportResults(results,status);
 }
@@ -1968,6 +2064,7 @@ function showImportResults(items,status){
   pdfItems=items;
   renderPdfItemsTable();
   document.getElementById('pdfStep1').style.display='none';
+  document.getElementById('pdfStep1b').style.display='none';
   document.getElementById('pdfStep2').style.display='block';
   document.getElementById('pdfDetectedCount').textContent=`${items.length}件を検出`;
 }
@@ -2166,6 +2263,22 @@ renderFoundOnlyGrid();
       </div>
 
       <div id="pdfLoadStatus" class="hint" style="margin-top:8px;min-height:18px;"></div>
+    </div>
+
+    <!-- Step1b: Excel列選択 -->
+    <div id="pdfStep1b" style="display:none;">
+      <div class="pdf-step-hint">各列の役割をドロップダウンで選択してから「解析」を押してください。<br><strong style="color:var(--accent);">品種名・数量・単位</strong>の3列は必須です。色でハイライトされます。</div>
+      <div style="overflow-x:auto;max-height:270px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-top:8px;">
+        <table class="pdf-import-table" style="min-width:100%;">
+          <thead id="colSelectorHeader"></thead>
+          <tbody id="colSelectorBody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="sel-btn" onclick="document.getElementById('pdfStep1b').style.display='none';document.getElementById('pdfStep1').style.display='block';">← 戻る</button>
+        <button onclick="parseWithSelectedCols()" style="flex:1;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;">この設定で解析 →</button>
+      </div>
+      <div id="pdfStep1bStatus" class="hint" style="margin-top:6px;min-height:16px;color:var(--danger,#dc2626);"></div>
     </div>
 
     <!-- Step2: 項目選択・単価入力 -->
