@@ -139,6 +139,13 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
 .pdf-import-table input[type=number]{text-align:right;}
 .pdf-import-table tr.checked-row{background:var(--accent-light);}
 .pdf-step-hint{font-size:12px;color:var(--text2);margin-bottom:10px;}
+.import-dropzone{border:2px dashed var(--border);border-radius:12px;padding:28px 16px;text-align:center;background:var(--bg);transition:border-color 0.15s,background 0.15s;cursor:pointer;}
+.import-dropzone.dz-over{border-color:var(--accent);background:var(--accent-light);}
+.import-dz-icon{font-size:36px;margin-bottom:6px;}
+.import-dz-text{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.import-dz-sub{font-size:11px;color:var(--text2);margin-bottom:14px;}
+.import-dz-btn{display:inline-block;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;}
+.import-dz-fname{margin-top:10px;font-size:12px;color:var(--accent);font-weight:700;min-height:16px;}
 .pdf-tool-row{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
 .pdf-add-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;margin-top:14px;width:100%;}
 .pdf-add-btn:hover{filter:brightness(1.1);}
@@ -1780,7 +1787,37 @@ function openPdfImport(){
   activeQueueIdx=-1;
   importRawRows=[];
   importColRoles=[];
+  const fname=document.getElementById('importDzFname');
+  if(fname)fname.textContent='';
+  initImportDropZone();
   switchImportTab('file');
+}
+
+let _importDzInited=false;
+function initImportDropZone(){
+  if(_importDzInited)return;
+  _importDzInited=true;
+  const dz=document.getElementById('importDropZone');
+  if(!dz)return;
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{
+    e.preventDefault();dz.classList.add('dz-over');
+  }));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{
+    e.preventDefault();dz.classList.remove('dz-over');
+  }));
+  dz.addEventListener('drop',e=>{
+    const file=e.dataTransfer.files[0];
+    if(!file)return;
+    const fname=document.getElementById('importDzFname');
+    if(fname)fname.textContent='📎 '+file.name;
+    onImportFileSelected(file);
+  });
+  // ファイル選択時もファイル名を表示
+  const inp=document.getElementById('pdfFileInput');
+  if(inp)inp.addEventListener('change',()=>{
+    const fname=document.getElementById('importDzFname');
+    if(fname&&inp.files[0])fname.textContent='📎 '+inp.files[0].name;
+  });
 }
 
 function switchImportTab(mode){
@@ -2244,10 +2281,15 @@ renderFoundOnlyGrid();
 
       <!-- ファイルモード -->
       <div id="importModeFile">
-        <div class="pdf-step-hint">Excelファイル(.xlsx/.xls)を選択してください。数量・単位が記載された行を自動で抽出します。PDFも試せますが精度は低めです。</div>
-        <div class="field">
-          <label>ファイル（Excel / PDF）</label>
-          <input type="file" id="pdfFileInput" accept=".xlsx,.xls,.xlsm,.pdf" onchange="onImportFileSelected(this.files[0])">
+        <div id="importDropZone" class="import-dropzone">
+          <div class="import-dz-icon">📂</div>
+          <div class="import-dz-text">Excelファイルをここにドロップ</div>
+          <div class="import-dz-sub">.xlsx / .xls / .xlsm 対応　　PDFも試せますが精度は低めです</div>
+          <label class="import-dz-btn">
+            ファイルを選択
+            <input type="file" id="pdfFileInput" accept=".xlsx,.xls,.xlsm,.pdf" onchange="onImportFileSelected(this.files[0])" style="display:none;">
+          </label>
+          <div class="import-dz-fname" id="importDzFname"></div>
         </div>
       </div>
 
