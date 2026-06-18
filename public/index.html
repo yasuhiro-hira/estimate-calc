@@ -150,6 +150,11 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
   <div class="card">
     <div class="card-title" id="subtypeSectionTitle">① 工種</div>
     <div id="subtypeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+    <div id="hinshuuInputWrap" style="display:none;margin-top:10px;">
+      <div class="field"><label>品種名（変更可）</label>
+        <input type="text" id="prodHinshuuInput" placeholder="例：北側メッシュフェンス">
+      </div>
+    </div>
   </div>
 
   <!-- 通常フォーム（規格品以外） -->
@@ -573,6 +578,10 @@ function initProductTab(cat){
   if(stepProd)stepProd.classList.remove('show');
   document.getElementById('normalProdForm').style.display='block';
   document.getElementById('specFenceForm').style.display='none';
+  const hw=document.getElementById('hinshuuInputWrap');
+  if(hw)hw.style.display='none';
+  const hi=document.getElementById('prodHinshuuInput');
+  if(hi)hi.value='';
 }
 
 function renderSubtypeGrid(cat){
@@ -596,6 +605,10 @@ function renderSubtypeGrid(cat){
         document.getElementById('found-section').style.display='none';
         document.getElementById('foundYesBtn').classList.remove('active');
         document.getElementById('foundNoBtn').classList.remove('active');
+        const hiFS=document.getElementById('prodHinshuuInput');
+        if(hiFS)hiFS.value='メッシュフェンス';
+        const hwFS=document.getElementById('hinshuuInputWrap');
+        if(hwFS)hwFS.style.display='block';
         renderMakerGrid();
         renderFenceFoundGrid();
       } else {
@@ -616,6 +629,10 @@ function renderSubtypeGrid(cat){
         document.getElementById('prodFoundQty').value=1;
         document.getElementById('prodFoundQtyHint').textContent='';
         renderMakerPresets(cat);
+        const hiN=document.getElementById('prodHinshuuInput');
+        if(hiN)hiN.value=st.label;
+        const hwN=document.getElementById('hinshuuInputWrap');
+        if(hwN)hwN.style.display='block';
       }
     };
     g.appendChild(b);
@@ -919,7 +936,7 @@ function addItem(){
       const withFoundLabel=foundWithFence?` 基礎込み □${selFenceFound.name}`:' 基礎別';
       groups.push({
         id:Date.now(), type:'fence',
-        hinshuu:'メッシュフェンス', naiyaku:`${selFence.name}${withFoundLabel}`,
+        hinshuu:(document.getElementById('prodHinshuuInput').value.trim()||'メッシュフェンス'), naiyaku:`${selFence.name}${withFoundLabel}`,
         title:`${selFence.maker} ${selFence.name}${withFoundLabel}`, titleSub:`×${m}m`,
         withFound:foundWithFence, foundName:foundWithFence?selFenceFound.name:'',
         foundQty, foundLabor, fence:selFence, m, fenceLaborPerM, margin, res,
@@ -935,6 +952,7 @@ function addItem(){
     const qty=parseFloat(document.getElementById('prodQty').value)||0;
     const shikiri=getShikiriVal();
     const laborUnit=parseFloat(document.getElementById('prodLabor').value)||0;
+    const hinshuuVal=document.getElementById('prodHinshuuInput').value.trim()||selSubtype.label;
     if(qty<=0){alert('数量を入力してください');return;}
     if(shikiri<=0){alert('仕入単価を入力してください');return;}
     const matCost=shikiri*qty;
@@ -966,7 +984,7 @@ function addItem(){
     groups.push({
       id:Date.now(), type:'product2',
       categoryId:currentTab, subtypeId:selSubtype.id,
-      koushuu:selSubtype.label, hinshuu:selSubtype.label,
+      koushuu:hinshuuVal, hinshuu:hinshuuVal,
       naiyaku:makerSpec, maker, spec,
       qty, unit:selSubtype.unit, hasLoss:selSubtype.hasLoss, hasFound:selSubtype.hasFound,
       pricingMode,
@@ -976,7 +994,7 @@ function addItem(){
       matCost, lossCost, labCost, foundMatCost, foundLabCost, totalCost,
       margin, estPerUnit, estTotal, discount, finalEst, profit, profitRate,
       estFinal:finalEst, costTotal:totalCost,
-      title:selSubtype.label,
+      title:hinshuuVal,
       titleSub:`${makerSpec?makerSpec+' ':''}×${qty}${selSubtype.unit}`,
     });
     renderGroups();resetToTop();
@@ -1190,6 +1208,14 @@ function editGroup(id){
 
   if(g.type==='fence'){
     switchTab('fence');
+    selSubtype=CATEGORIES.fence.subtypes.find(st=>st.id==='fence-spec')||null;
+    renderSubtypeGrid('fence');
+    document.getElementById('normalProdForm').style.display='none';
+    document.getElementById('specFenceForm').style.display='block';
+    const hiF=document.getElementById('prodHinshuuInput');
+    if(hiF)hiF.value=g.hinshuu||'メッシュフェンス';
+    const hwF=document.getElementById('hinshuuInputWrap');
+    if(hwF)hwF.style.display='block';
     selMaker=g.fence.maker; selSeries=g.fence.series; selFence=g.fence;
     renderMakerGrid(); renderSeriesGrid(); renderHeightGrid();
     document.getElementById('step-series').classList.add('show');
@@ -1246,6 +1272,10 @@ function editGroup(id){
       const mgLabel=document.getElementById('mgProdStepLabel');
       if(mgLabel)mgLabel.textContent=(selSubtype.hasFound?'⑧':'⑦')+' 利益率';
     }
+    const hiP=document.getElementById('prodHinshuuInput');
+    if(hiP)hiP.value=g.hinshuu||'';
+    const hwP=document.getElementById('hinshuuInputWrap');
+    if(hwP)hwP.style.display='block';
     selProdMaker=g.maker||null;
     document.getElementById('prodMakerInput').value=g.maker||'';
     renderMakerPresets(g.categoryId);
@@ -1310,6 +1340,8 @@ function resetToTop(){
   safe('customUnit',el=>el.value='');
 
   selSubtype=null;selProdMaker=null;selProdFound=null;pricingMode='shikiri';
+  safe('hinshuuInputWrap',el=>el.style.display='none');
+  safe('prodHinshuuInput',el=>el.value='');
   safe('step-prod',el=>el.classList.remove('show'));
   safe('prodMakerInput',el=>el.value='');
   safe('prodSpecInput',el=>el.value='');
@@ -1329,7 +1361,7 @@ function resetToTop(){
   safe('teikaSect',el=>el.style.display='none');
   safe('shikiriSect',el=>el.style.display='block');
 
-  ['fence','found','custom','product','prod2'].forEach(t=>setMg(t,0));
+  ['fence','found','custom','prod2'].forEach(t=>setMg(t,0));
   switchTab('fence');
   window.scrollTo({top:0,behavior:'smooth'});
 }
