@@ -187,22 +187,34 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
   <button class="tab-btn" onclick="switchTab('gate')">🚪 門扉</button>
   <button class="tab-btn" onclick="switchTab('bollard')">🚧 バリカー</button>
   <button class="tab-btn" onclick="switchTab('other')">🔧 その他</button>
+  <button class="tab-btn" onclick="switchTab('fence-spec')">📐 規格品</button>
   <button class="tab-btn" onclick="switchTab('foundation')">⬜ 独立基礎</button>
   <button class="tab-btn" onclick="switchTab('custom')">✏️ 手入力</button>
 </div>
 
-<!-- 製品共通フォーム（フェンス/門扉/バリカー/その他） -->
+<!-- 製品共通フォーム（フェンス/門扉/バリカー/その他/規格品） -->
 <div id="tab-product-form" class="tab-panel show">
 
-  <!-- ① 工種 -->
+  <!-- ① 品種名 + カテゴリ選択 -->
   <div class="card">
-    <div class="card-title" id="subtypeSectionTitle">① 工種</div>
-    <div id="subtypeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
-    <div id="hinshuuInputWrap" style="display:none;margin-top:10px;">
-      <div class="field"><label>品種名（変更可）</label>
+    <div class="card-title">① 品種名</div>
+    <div id="hinshuuInputWrap">
+      <div class="field">
         <input type="text" id="prodHinshuuInput" placeholder="例：北側メッシュフェンス">
       </div>
     </div>
+    <div id="catBtnRow" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+      <button class="sel-btn cat-btn" data-cat="fence" onclick="selectCategory('fence')">🔲 フェンス</button>
+      <button class="sel-btn cat-btn" data-cat="gate" onclick="selectCategory('gate')">🚪 門扉</button>
+      <button class="sel-btn cat-btn" data-cat="bollard" onclick="selectCategory('bollard')">🚧 バリカー</button>
+      <button class="sel-btn cat-btn" data-cat="other" onclick="selectCategory('other')">🔧 その他</button>
+    </div>
+  </div>
+
+  <!-- ② 工種 -->
+  <div id="subtypeSection" class="card" style="display:none;">
+    <div class="card-title" id="subtypeSectionTitle">② 工種</div>
+    <div id="subtypeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
   </div>
 
   <!-- 通常フォーム（規格品以外） -->
@@ -602,34 +614,73 @@ let mg={fence:0,found:0,custom:0,product:0,prod2:0};
 var groups=[]; // 追加済み品目グループ（saved-stateスクリプトから上書きできるようvarで宣言）
 
 // ===== タブ =====
-const PROD_TABS=['fence','gate','bollard','other'];
+const PROD_TABS=['fence','gate','bollard','other','fence-spec'];
 function switchTab(t){
   currentTab=t;
-  ['fence','gate','bollard','other','foundation','custom'].forEach((n,i)=>{
+  ['fence','gate','bollard','other','fence-spec','foundation','custom'].forEach((n,i)=>{
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n===t);
   });
   const isProd=PROD_TABS.includes(t);
   document.getElementById('tab-product-form').classList.toggle('show',isProd);
   document.getElementById('tab-foundation').classList.toggle('show',t==='foundation');
   document.getElementById('tab-custom').classList.toggle('show',t==='custom');
-  if(isProd)initProductTab(t);
+  if(t==='fence-spec'){
+    selectFenceSpec();
+  } else if(isProd){
+    selectCategory(t);
+  }
 }
 
 // ===== 製品共通フォーム =====
-function initProductTab(cat){
+function selectCategory(cat){
+  currentTab=cat;
+  ['fence','gate','bollard','other','fence-spec','foundation','custom'].forEach((n,i)=>{
+    document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n===cat);
+  });
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.toggle('active',b.dataset.cat===cat));
+  document.getElementById('tab-product-form').classList.add('show');
+  document.getElementById('tab-foundation').classList.remove('show');
+  document.getElementById('tab-custom').classList.remove('show');
   selSubtype=null;selProdMaker=null;selProdFound=null;
-  const catDef=CATEGORIES[cat];
-  const titleEl=document.getElementById('subtypeSectionTitle');
-  if(titleEl)titleEl.textContent=`① ${catDef.label} 工種`;
-  renderSubtypeGrid(cat);
   const stepProd=document.getElementById('step-prod');
   if(stepProd)stepProd.classList.remove('show');
-  document.getElementById('normalProdForm').style.display='block';
+  document.getElementById('normalProdForm').style.display='none';
   document.getElementById('specFenceForm').style.display='none';
-  const hw=document.getElementById('hinshuuInputWrap');
-  if(hw)hw.style.display='none';
+  const subtypeSection=document.getElementById('subtypeSection');
+  if(subtypeSection)subtypeSection.style.display='block';
+  const titleEl=document.getElementById('subtypeSectionTitle');
+  if(titleEl&&CATEGORIES[cat])titleEl.textContent=`② ${CATEGORIES[cat].label} 工種`;
+  renderSubtypeGrid(cat);
+}
+
+function selectFenceSpec(){
+  currentTab='fence-spec';
+  ['fence','gate','bollard','other','fence-spec','foundation','custom'].forEach((n,i)=>{
+    document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n==='fence-spec');
+  });
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-product-form').classList.add('show');
+  document.getElementById('tab-foundation').classList.remove('show');
+  document.getElementById('tab-custom').classList.remove('show');
+  const subtypeSection=document.getElementById('subtypeSection');
+  if(subtypeSection)subtypeSection.style.display='none';
+  document.getElementById('normalProdForm').style.display='none';
+  document.getElementById('specFenceForm').style.display='block';
+  selSubtype=CATEGORIES.fence.subtypes.find(st=>st.id==='fence-spec')||null;
+  selProdMaker=null;selProdFound=null;
+  const stepProd=document.getElementById('step-prod');
+  if(stepProd)stepProd.classList.remove('show');
+  selMaker=null;selSeries=null;selFence=null;selFenceFound=null;foundWithFence=null;
+  document.getElementById('step-series').classList.remove('show');
+  document.getElementById('step-height').classList.remove('show');
+  document.getElementById('step-m').classList.remove('show');
+  document.getElementById('found-section').style.display='none';
+  document.getElementById('foundYesBtn').classList.remove('active');
+  document.getElementById('foundNoBtn').classList.remove('active');
   const hi=document.getElementById('prodHinshuuInput');
-  if(hi)hi.value='';
+  if(hi&&!hi.value.trim())hi.value='メッシュフェンス';
+  renderMakerGrid();
+  renderFenceFoundGrid();
 }
 
 function renderSubtypeGrid(cat){
@@ -654,7 +705,7 @@ function renderSubtypeGrid(cat){
         document.getElementById('foundYesBtn').classList.remove('active');
         document.getElementById('foundNoBtn').classList.remove('active');
         const hiFS=document.getElementById('prodHinshuuInput');
-        if(hiFS)hiFS.value='メッシュフェンス';
+        if(hiFS&&!hiFS.value.trim())hiFS.value='メッシュフェンス';
         const hwFS=document.getElementById('hinshuuInputWrap');
         if(hwFS)hwFS.style.display='block';
         renderMakerGrid();
@@ -678,7 +729,7 @@ function renderSubtypeGrid(cat){
         document.getElementById('prodFoundQtyHint').textContent='';
         renderMakerPresets(cat);
         const hiN=document.getElementById('prodHinshuuInput');
-        if(hiN)hiN.value=st.label;
+        if(hiN&&!hiN.value.trim())hiN.value=st.label;
         const hwN=document.getElementById('hinshuuInputWrap');
         if(hwN)hwN.style.display='block';
       }
@@ -1394,7 +1445,6 @@ function resetToTop(){
   safe('customUnit',el=>el.value='');
 
   selSubtype=null;selProdMaker=null;selProdFound=null;pricingMode='shikiri';
-  safe('hinshuuInputWrap',el=>el.style.display='none');
   safe('prodHinshuuInput',el=>el.value='');
   safe('step-prod',el=>el.classList.remove('show'));
   safe('prodMakerInput',el=>el.value='');
@@ -2293,7 +2343,7 @@ function removeQueueItem(i){
 }
 
 // ===== 初期化 =====
-initProductTab('fence');
+selectCategory('fence');
 renderFoundOnlyGrid();
 
 // 保存ファイルから開いた場合の状態復元
