@@ -1260,11 +1260,7 @@ function editGroup(id){
   renderGroups();
 
   if(g.type==='fence'){
-    switchTab('fence');
-    selSubtype=CATEGORIES.fence.subtypes.find(st=>st.id==='fence-spec')||null;
-    renderSubtypeGrid('fence');
-    document.getElementById('normalProdForm').style.display='none';
-    document.getElementById('specFenceForm').style.display='block';
+    switchTab('fence-spec');
     const hiF=document.getElementById('prodHinshuuInput');
     if(hiF)hiF.value=g.hinshuu||'メッシュフェンス';
     const hwF=document.getElementById('hinshuuInputWrap');
