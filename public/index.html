@@ -1206,11 +1206,11 @@ function renderGroups(){
   wrap.style.display='block';
   document.getElementById('itemsCount').textContent=`品目一覧 (${groups.length}件)`;
   list.innerHTML='';
-  groups.forEach(g=>list.appendChild(makeCard(g)));
+  groups.forEach((g,i)=>list.appendChild(makeCard(g,i)));
   renderGrand();
 }
 
-function makeCard(g){
+function makeCard(g,idx){
   const card=document.createElement('div');
   card.className='item-card';
 
@@ -1311,6 +1311,8 @@ function makeCard(g){
         <div class="item-sum-calc">${calcText}</div>
       </div>
       <div class="item-sum-profit">${profitText}</div>
+      <button class="item-sum-edit" onclick="event.stopPropagation();moveGroup(${uid},-1)" ${idx===0?'disabled':''} style="padding:4px 7px;opacity:${idx===0?0.3:1};">▲</button>
+      <button class="item-sum-edit" onclick="event.stopPropagation();moveGroup(${uid},1)" ${idx===groups.length-1?'disabled':''} style="padding:4px 7px;opacity:${idx===groups.length-1?0.3:1};">▼</button>
       <button class="item-sum-edit" onclick="event.stopPropagation();copyGroup(${uid})">コピー</button>
       <button class="item-sum-edit" onclick="event.stopPropagation();editGroup(${uid})">編集</button>
       <button class="item-sum-del" onclick="event.stopPropagation();delGroup(${uid})">削除</button>
@@ -1332,6 +1334,7 @@ function toggleDetail(id){
 
 function delGroup(id){groups=groups.filter(g=>g.id!==id);renderGroups();}
 function copyGroup(id){const g=groups.find(g=>g.id===id);if(!g)return;groups.push({...g,id:Date.now()});renderGroups();}
+function moveGroup(id,dir){const i=groups.findIndex(g=>g.id===id);if(i<0)return;const j=i+dir;if(j<0||j>=groups.length)return;[groups[i],groups[j]]=[groups[j],groups[i]];renderGroups();}
 function clearAll(){if(!confirm('全クリアしますか？'))return;groups=[];renderGroups();}
 
 
