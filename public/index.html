@@ -193,7 +193,7 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       </div>
     </div>
     <div id="catBtnRow" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
-      <button class="sel-btn cat-btn" data-tab="fence-spec" onclick="switchTab('fence-spec')">🔲 フェンス</button>
+      <button class="sel-btn cat-btn" data-cat="fence" onclick="selectCategory('fence')">🔲 フェンス</button>
       <button class="sel-btn cat-btn" data-cat="gate" onclick="selectCategory('gate')">🚪 門扉</button>
       <button class="sel-btn cat-btn" data-cat="bollard" onclick="selectCategory('bollard')">🚧 バリカー</button>
       <button class="sel-btn cat-btn" data-cat="other" onclick="selectCategory('other')">🔧 その他</button>
@@ -257,6 +257,15 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
         <button class="m-ctrl-btn" onclick="chg('prodLabor',500)">＋</button>
       </div>
       <div class="hint" id="prodLossHint"></div>
+
+      <!-- 基礎トグル（フェンスカテゴリのみ） -->
+      <div id="prodFenceFoundToggle" style="display:none;">
+        <div class="card-title gap">⑦ 基礎</div>
+        <div class="col2">
+          <button class="sel-btn" id="prodFenceFoundYesBtn" onclick="setFenceProdFound(true)">基礎込み</button>
+          <button class="sel-btn" id="prodFenceFoundNoBtn" onclick="setFenceProdFound(false)">基礎なし</button>
+        </div>
+      </div>
 
       <!-- 基礎セクション（hasFound時のみ） -->
       <div id="prodFoundSect" style="display:none;">
@@ -459,9 +468,14 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       <div class="field"><label>納期</label><input type="text" id="pdfNoki" placeholder="御打合せ"></div>
       <div class="field"><label>有効期限</label><select id="pdfExpiry" style="border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:#fff;outline:none;width:100%;"></select></div>
       <div class="field">
-        <label>見積条件</label>
-        <div id="condList" style="display:flex;flex-direction:column;gap:6px;margin-top:2px;"></div>
-        <button type="button" onclick="addCondItem('')" style="margin-top:8px;width:100%;padding:9px;border:1.5px dashed var(--border);border-radius:8px;background:#fafafa;color:var(--text2);font-size:13px;cursor:pointer;">＋ 条件を追加</button>
+        <div onclick="toggleCondAccordion()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;padding:4px 0;">
+          <label style="cursor:pointer;font-weight:600;pointer-events:none;">見積条件</label>
+          <span id="condAccordionIcon" style="font-size:11px;color:var(--text2);">▼ 開く</span>
+        </div>
+        <div id="condAccordionBody" style="display:none;">
+          <div id="condList" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
+          <button type="button" onclick="addCondItem('')" style="margin-top:8px;width:100%;padding:9px;border:1.5px dashed var(--border);border-radius:8px;background:#fafafa;color:var(--text2);font-size:13px;cursor:pointer;">＋ 条件を追加</button>
+        </div>
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:18px;">
@@ -615,6 +629,29 @@ function selectCategory(cat){
   document.getElementById('normalProdForm').style.display='none';
   document.getElementById('specFenceForm').style.display='none';
   const subtypeSection=document.getElementById('subtypeSection');
+  const fft=document.getElementById('prodFenceFoundToggle');
+  if(cat==='fence'){
+    if(subtypeSection)subtypeSection.style.display='none';
+    if(fft)fft.style.display='block';
+    selSubtype=CATEGORIES.fence.subtypes.find(st=>st.id==='fence-nofound')||null;
+    document.getElementById('normalProdForm').style.display='block';
+    const stepProd2=document.getElementById('step-prod');
+    if(stepProd2)stepProd2.classList.add('show');
+    if(selSubtype){
+      ['prodUnitLabel','prodUnitLabel2','prodLaborUnitLabel'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=selSubtype.unit;});
+      document.getElementById('prodLabor').value=selSubtype.laborDef;
+      const lh=document.getElementById('prodLossHint');
+      if(lh)lh.textContent='※材料ロス5%を原価に自動加算します';
+    }
+    document.getElementById('prodFoundSect').style.display='none';
+    document.getElementById('prodFoundLaborSect').style.display='none';
+    fenceProdWithFound=false;
+    document.getElementById('prodFenceFoundYesBtn').classList.remove('active');
+    document.getElementById('prodFenceFoundNoBtn').classList.remove('active');
+    renderMakerPresets(cat);
+    return;
+  }
+  if(fft)fft.style.display='none';
   if(subtypeSection)subtypeSection.style.display='block';
   const titleEl=document.getElementById('subtypeSectionTitle');
   if(titleEl&&CATEGORIES[cat])titleEl.textContent=`② ${CATEGORIES[cat].label} 工種`;
@@ -862,6 +899,17 @@ function renderFenceFoundGrid(){
     b.onclick=()=>{selFenceFound=p;document.getElementById('foundLabor').value=p.defLabor;renderFenceFoundGrid();updateFoundHint()};
     g.appendChild(b);
   });
+}
+let fenceProdWithFound=false;
+function setFenceProdFound(v){
+  fenceProdWithFound=v;
+  selSubtype=CATEGORIES.fence.subtypes.find(st=>st.id===(v?'fence-withfound':'fence-nofound'))||selSubtype;
+  selProdFound=null;
+  document.getElementById('prodFenceFoundYesBtn').classList.toggle('active',v);
+  document.getElementById('prodFenceFoundNoBtn').classList.toggle('active',!v);
+  document.getElementById('prodFoundSect').style.display=v?'block':'none';
+  document.getElementById('prodFoundLaborSect').style.display=v?'block':'none';
+  if(v)renderProdFoundGrid();
 }
 function setFoundOpt(v){
   foundWithFence=v;
@@ -1311,6 +1359,13 @@ function editGroup(id){
       if(lossHint)lossHint.textContent=selSubtype.hasLoss?'※材料ロス5%を原価に自動加算します':'';
       document.getElementById('prodFoundSect').style.display=selSubtype.hasFound?'block':'none';
       document.getElementById('prodFoundLaborSect').style.display=selSubtype.hasFound==='full'?'block':'none';
+      if(g.categoryId==='fence'){
+        const v=!!(g.foundName);
+        fenceProdWithFound=v;
+        document.getElementById('prodFenceFoundYesBtn').classList.toggle('active',v);
+        document.getElementById('prodFenceFoundNoBtn').classList.toggle('active',!v);
+        document.getElementById('prodFenceFoundToggle').style.display='block';
+      }
     }
     const hiP=document.getElementById('prodHinshuuInput');
     if(hiP)hiP.value=g.hinshuu||'';
@@ -1590,6 +1645,13 @@ function openPdfModal(){
   document.getElementById('pdfModal').style.display='block';
 }
 function closePdfModal(){document.getElementById('pdfModal').style.display='none';}
+function toggleCondAccordion(){
+  const body=document.getElementById('condAccordionBody');
+  const icon=document.getElementById('condAccordionIcon');
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  icon.textContent=open?'▼ 開く':'▲ 閉じる';
+}
 
 function genPdf(){
   const gs=groups;if(!gs||gs.length===0)return;
@@ -1619,13 +1681,7 @@ function genPdf(){
       <td class="num">${fmtN(perUnit)}</td>
       <td class="num">${fmtN(estTotal)}</td><td></td>
     </tr>`;
-    const foundRow=g.type==='fence'?`<tr style="font-size:8pt;color:#555;">
-      <td></td>
-      <td>基礎工事</td>
-      <td>${g.withFound?`□${g.foundName}込`:'含みません'}</td>
-      <td colspan="5"></td>
-    </tr>`:'';
-    return mainRow+foundRow;
+    return mainRow;
   }).join('');
 
   const preTotalSum=gs.reduce((s,g)=>s+(g.type==='fence'?g.res.estTotal:g.estTotal),0);
