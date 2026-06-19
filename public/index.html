@@ -1673,7 +1673,8 @@ function genPdf(){
     const perUnit=g.type==='fence'?g.res.estPerM:g.estPerUnit;
     const estTotal=g.type==='fence'?g.res.estTotal:g.estTotal;
     const hinshuu=g.hinshuu||(g.type==='fence'?'メッシュフェンス':g.type==='foundation'?'独立基礎':g.title);
-    const naiyaku=g.type==='fence'?`${g.fence.maker} ${g.naiyaku||''}`:(g.naiyaku!==undefined?g.naiyaku:'');
+    const naiyakuBase=g.type==='fence'?`${g.fence.maker} ${g.naiyaku||''}`:(g.naiyaku!==undefined?g.naiyaku:'');
+    const naiyaku=g.type!=='fence'&&g.foundName?`${naiyakuBase} 基礎込み □${g.foundName}`:naiyakuBase;
     const mainRow=`<tr>
       <td class="ctr">${i+1}</td>
       <td>${hinshuu}</td><td>${naiyaku}</td>
