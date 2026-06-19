@@ -1676,6 +1676,7 @@ function genPdf(){
     const naiyakuBase=g.type==='fence'?`${g.fence.maker} ${g.naiyaku||''}`:(g.naiyaku!==undefined?g.naiyaku:'');
     const naiyaku=g.type!=='fence'&&g.categoryId==='fence'
       ?(g.foundName?`${naiyakuBase} 基礎込み □${g.foundName}`:`${naiyakuBase} 基礎なし`)
+      :g.subtypeId==='bollard-concrete'?`${naiyakuBase} 現場打ち施工`
       :naiyakuBase;
     const mainRow=`<tr>
       <td class="ctr">${i+1}</td>
