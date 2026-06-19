@@ -249,6 +249,8 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
           <button class="m-ctrl-btn" onclick="chg('shikiriVal',100)">＋</button>
         </div>
       </div>
+      <div id="extraCostRows" style="margin-top:4px;"></div>
+      <button type="button" onclick="addExtraCostRow()" style="margin-top:4px;width:100%;padding:7px;border:1.5px dashed var(--border);border-radius:8px;background:#fafafa;color:var(--text2);font-size:12px;cursor:pointer;">＋ 費用を追加（運賃・別途費用など）</button>
 
       <div class="card-title gap">⑥ 施工費（円/<span id="prodLaborUnitLabel">m</span>）</div>
       <div class="m-ctrl">
@@ -512,25 +514,25 @@ const FENCE_MASTER = [
   {id:211,maker:'朝日スチール',series:'UN-A',name:'UN-A3000',price:28800,rate:54,height:3000},
 ];
 const FOUND_MASTER = [
-  {id:'f1', name:'180×180×450',     shikiri:650,  defLabor:2300},
-  {id:'f2', name:'200×200×450',     shikiri:850,  defLabor:2300},
-  {id:'f3', name:'250×250×250',     shikiri:800,  defLabor:2300},
-  {id:'f4', name:'300×300×250',     shikiri:1010, defLabor:2300},
-  {id:'f5', name:'300×300×300',     shikiri:1200, defLabor:2300},
-  {id:'f6', name:'300×300×400',     shikiri:1600, defLabor:4600},
-  {id:'f7', name:'300×300×400角欠②',shikiri:1780, defLabor:4600},
-  {id:'f8', name:'300×300×450',     shikiri:1800, defLabor:4600},
-  {id:'f9', name:'300×300×500',     shikiri:2000, defLabor:4600},
-  {id:'f10',name:'300×300×600',     shikiri:2460, defLabor:4600},
+  {id:'f1', name:'180×180×450',     shikiri:650,  defLabor:2000},
+  {id:'f2', name:'200×200×450',     shikiri:850,  defLabor:2000},
+  {id:'f3', name:'250×250×250',     shikiri:800,  defLabor:2000},
+  {id:'f4', name:'300×300×250',     shikiri:1010, defLabor:2000},
+  {id:'f5', name:'300×300×300',     shikiri:1200, defLabor:2000},
+  {id:'f6', name:'300×300×400',     shikiri:1600, defLabor:5000},
+  {id:'f7', name:'300×300×400角欠②',shikiri:1780, defLabor:5000},
+  {id:'f8', name:'300×300×450',     shikiri:1800, defLabor:5000},
+  {id:'f9', name:'300×300×500',     shikiri:2000, defLabor:5000},
+  {id:'f10',name:'300×300×600',     shikiri:2460, defLabor:5000},
 ];
 
 const PRODUCT_TYPES=[
-  {id:'gate0',    label:'門扉　基礎なし',       unit:'基', laborDef:23000, hasLoss:false},
-  {id:'gate1',    label:'門扉　基礎材料あり',    unit:'基', laborDef:23000, hasLoss:false},
-  {id:'gate2',    label:'門扉　基礎あり',        unit:'基', laborDef:26450, hasLoss:false},
+  {id:'gate0',    label:'門扉　基礎なし',       unit:'基', laborDef:20000, hasLoss:false},
+  {id:'gate1',    label:'門扉　基礎材料あり',    unit:'基', laborDef:20000, hasLoss:false},
+  {id:'gate2',    label:'門扉　基礎あり',        unit:'基', laborDef:20000, hasLoss:false},
   {id:'slide',    label:'引戸・ノンレール門扉',  unit:'箇所',laborDef:57500, hasLoss:false},
-  {id:'bollard1', label:'バリカー　独立基礎',    unit:'基', laborDef:5750,  hasLoss:false},
-  {id:'bollard2', label:'バリカー　現場打ち',    unit:'基', laborDef:12650, hasLoss:false},
+  {id:'bollard1', label:'バリカー　独立基礎',    unit:'基', laborDef:10000, hasLoss:false},
+  {id:'bollard2', label:'バリカー　現場打ち',    unit:'基', laborDef:10000, hasLoss:false},
   {id:'roof',     label:'屋根工事',              unit:'棟', laborDef:57500, hasLoss:false},
   {id:'mirror',   label:'ミラー',                unit:'基', laborDef:17250, hasLoss:false},
   {id:'bikerack', label:'駐輪ラック',            unit:'台', laborDef:1725,  hasLoss:false},
@@ -545,19 +547,19 @@ const CATEGORIES={
   fence:{
     label:'フェンス',
     subtypes:[
-      {id:'fence-nofound',  label:'基礎なし',     unit:'m', laborDef:2300, hasLoss:true, hasFound:false},
-      {id:'fence-matfound', label:'基礎材料あり', unit:'m', laborDef:2300, hasLoss:true, hasFound:'mat'},
-      {id:'fence-withfound',label:'基礎あり',     unit:'m', laborDef:2300, hasLoss:true, hasFound:'full'},
-      {id:'fence-spec',     label:'規格品(G10等)',unit:'m', laborDef:2300, hasLoss:true, hasFound:false},
+      {id:'fence-nofound',  label:'基礎なし',     unit:'m', laborDef:2000, hasLoss:true, hasFound:false},
+      {id:'fence-matfound', label:'基礎材料あり', unit:'m', laborDef:2000, hasLoss:true, hasFound:'mat'},
+      {id:'fence-withfound',label:'基礎あり',     unit:'m', laborDef:2000, hasLoss:true, hasFound:'full'},
+      {id:'fence-spec',     label:'規格品(G10等)',unit:'m', laborDef:2000, hasLoss:true, hasFound:false},
     ],
     makers:['積水樹脂','朝日スチール','四国化成','YKK AP','LIXIL','三協アルミ'],
   },
   gate:{
     label:'門扉',
     subtypes:[
-      {id:'gate-nofound',  label:'基礎なし',     unit:'基', laborDef:23000, hasLoss:false, hasFound:false},
-      {id:'gate-matfound', label:'基礎材料あり', unit:'基', laborDef:23000, hasLoss:false, hasFound:'mat'},
-      {id:'gate-withfound',label:'基礎あり',     unit:'基', laborDef:26450, hasLoss:false, hasFound:'full'},
+      {id:'gate-nofound',  label:'基礎なし',     unit:'基', laborDef:20000, hasLoss:false, hasFound:false},
+      {id:'gate-matfound', label:'基礎材料あり', unit:'基', laborDef:20000, hasLoss:false, hasFound:'mat'},
+      {id:'gate-withfound',label:'基礎あり',     unit:'基', laborDef:20000, hasLoss:false, hasFound:'full'},
       {id:'slide',         label:'引戸・ノンレール', unit:'箇所', laborDef:57500, hasLoss:false, hasFound:false},
     ],
     makers:['四国化成','YKK AP','LIXIL','三協アルミ','文化シヤッター'],
@@ -565,8 +567,8 @@ const CATEGORIES={
   bollard:{
     label:'バリカー',
     subtypes:[
-      {id:'bollard-found',    label:'独立基礎', unit:'基', laborDef:5750,  hasLoss:false, hasFound:'full'},
-      {id:'bollard-concrete', label:'現場打ち', unit:'基', laborDef:12650, hasLoss:false, hasFound:false},
+      {id:'bollard-found',    label:'独立基礎', unit:'基', laborDef:10000, hasLoss:false, hasFound:'full'},
+      {id:'bollard-concrete', label:'現場打ち', unit:'基', laborDef:10000, hasLoss:false, hasFound:false},
     ],
     makers:['積水樹脂','サンポール','日鉄','朝日スチール'],
   },
@@ -901,6 +903,30 @@ function renderFenceFoundGrid(){
   });
 }
 let fenceProdWithFound=false;
+let extraCostItems=[];
+function addExtraCostRow(label='',amount=0,isShiki=false){
+  extraCostItems.push({label,amount,isShiki});
+  renderExtraCostRows();
+}
+function removeExtraCostRow(idx){
+  extraCostItems.splice(idx,1);
+  renderExtraCostRows();
+}
+function toggleExtraRowShiki(idx){
+  extraCostItems[idx].isShiki=!extraCostItems[idx].isShiki;
+  renderExtraCostRows();
+}
+function renderExtraCostRows(){
+  const cont=document.getElementById('extraCostRows');
+  if(!cont)return;
+  cont.innerHTML='';
+  extraCostItems.forEach((ec,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;gap:4px;align-items:center;margin-bottom:4px;';
+    row.innerHTML=`<input type="text" value="${ec.label}" placeholder="項目名（例：運賃）" style="flex:1;min-width:50px;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:13px;" oninput="extraCostItems[${i}].label=this.value"><input type="number" value="${ec.amount||''}" placeholder="金額" inputmode="numeric" style="width:88px;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:13px;" oninput="extraCostItems[${i}].amount=parseFloat(this.value)||0"><button onclick="toggleExtraRowShiki(${i})" class="sel-btn${ec.isShiki?' active':''}" style="padding:5px 7px;font-size:11px;white-space:nowrap;min-width:44px;">${ec.isShiki?'一式':'／単位'}</button><button onclick="removeExtraCostRow(${i})" style="padding:4px 8px;font-size:14px;color:var(--text2);background:none;border:none;cursor:pointer;">✕</button>`;
+    cont.appendChild(row);
+  });
+}
 function setFenceProdFound(v){
   fenceProdWithFound=v;
   selSubtype=CATEGORIES.fence.subtypes.find(st=>st.id===(v?'fence-withfound':'fence-nofound'))||selSubtype;
@@ -1064,7 +1090,9 @@ function addItem(){
     const laborUnit=parseFloat(document.getElementById('prodLabor').value)||0;
     const hinshuuVal=document.getElementById('prodHinshuuInput').value.trim()||selSubtype.label;
     if(qty<=0){alert('数量を入力してください');return;}
-    if(shikiri<=0){alert('仕入単価を入力してください');return;}
+    const extraSnapshot=extraCostItems.map(ec=>({...ec}));
+    const extraTotal=extraSnapshot.reduce((s,ec)=>s+(ec.isShiki?ec.amount:ec.amount*qty),0);
+    if(shikiri<=0&&extraTotal<=0){alert('仕入単価を入力してください');return;}
     const matCost=shikiri*qty;
     const lossCost=selSubtype.hasLoss?matCost*0.05:0;
     const labCost=laborUnit*qty;
@@ -1080,7 +1108,7 @@ function addItem(){
         foundLabCost=foundLaborUnit*foundQty;
       }
     }
-    const totalCost=matCost+lossCost+labCost+foundMatCost+foundLabCost;
+    const totalCost=matCost+lossCost+extraTotal+labCost+foundMatCost+foundLabCost;
     const margin=globalMg;
     const costPerUnit=totalCost/qty;
     const sellPerUnit=margin>0&&margin<100?costPerUnit/(1-margin/100):costPerUnit;
@@ -1102,6 +1130,7 @@ function addItem(){
       teika:pricingMode==='teika'?(parseFloat(document.getElementById('teikaVal').value)||0):0,
       kakuritsu:pricingMode==='teika'?(parseFloat(document.getElementById('kakuritsuVal').value)||0):0,
       shikiri, laborUnit, foundName, foundQty, foundLaborUnit,
+      extraCostItems:extraSnapshot, extraTotal,
       matCost, lossCost, labCost, foundMatCost, foundLabCost, totalCost,
       margin, estPerUnit, estTotal, discount, finalEst, profit, profitRate,
       estFinal:finalEst, costTotal:totalCost, laborCost,
@@ -1250,10 +1279,14 @@ function makeCard(g){
       <div class="detail-sep-label">独立基礎 □${g.foundName} ×${g.foundQty}個</div>
       <div class="detail-row"><div class="detail-label">基礎材料費</div><div class="detail-cost">${fmt(g.foundMatCost)}</div></div>
       ${g.foundLaborUnit>0?`<div class="detail-row"><div class="detail-label">基礎施工費（¥${g.foundLaborUnit.toLocaleString()}/個）</div><div class="detail-cost">${fmt(g.foundLabCost)}</div></div>`:''}`:'';
+    const extraRowsHtml=(g.extraCostItems&&g.extraCostItems.length>0)
+      ?g.extraCostItems.map(ec=>`<div class="detail-row"><div class="detail-label">${ec.label||'追加費用'}（${ec.isShiki?'一式':'¥'+ec.amount.toLocaleString()+'/'+g.unit}）</div><div class="detail-cost">${fmt(ec.isShiki?ec.amount:ec.amount*g.qty)}</div></div>`).join('')
+      :'';
     detailHTML=`
       <div class="detail-col-hd"><span>原価内訳</span><span>原価</span></div>
       <div class="detail-row"><div class="detail-label">仕入（${shikiriInfo}/${g.unit} × ${g.qty}${g.unit}）</div><div class="detail-cost">${fmt(g.matCost)}</div></div>
       ${lossRow}
+      ${extraRowsHtml}
       <div class="detail-row"><div class="detail-label">施工費（¥${g.laborUnit.toLocaleString()}/${g.unit} × ${g.qty}${g.unit}）</div><div class="detail-cost">${fmt(g.labCost)}</div></div>
       ${foundRows}
       <div class="detail-total-row">
@@ -1278,6 +1311,7 @@ function makeCard(g){
         <div class="item-sum-calc">${calcText}</div>
       </div>
       <div class="item-sum-profit">${profitText}</div>
+      <button class="item-sum-edit" onclick="event.stopPropagation();copyGroup(${uid})">コピー</button>
       <button class="item-sum-edit" onclick="event.stopPropagation();editGroup(${uid})">編集</button>
       <button class="item-sum-del" onclick="event.stopPropagation();delGroup(${uid})">削除</button>
       <div class="item-sum-arrow" id="arrow-${uid}">▼</div>
@@ -1297,6 +1331,7 @@ function toggleDetail(id){
 }
 
 function delGroup(id){groups=groups.filter(g=>g.id!==id);renderGroups();}
+function copyGroup(id){const g=groups.find(g=>g.id===id);if(!g)return;groups.push({...g,id:Date.now()});renderGroups();}
 function clearAll(){if(!confirm('全クリアしますか？'))return;groups=[];renderGroups();}
 
 
@@ -1384,6 +1419,8 @@ function editGroup(id){
     } else {
       document.getElementById('shikiriVal').value=g.shikiri||0;
     }
+    extraCostItems=(g.extraCostItems||[]).map(ec=>({...ec}));
+    renderExtraCostRows();
     document.getElementById('prodLabor').value=g.laborUnit||0;
     if(g.foundName){
       selProdFound=FOUND_MASTER.find(f=>f.name===g.foundName)||null;
@@ -1458,6 +1495,7 @@ function resetToTop(){
   safe('modeShikiriBt',el=>el.classList.add('active'));
   safe('teikaSect',el=>el.style.display='none');
   safe('shikiriSect',el=>el.style.display='block');
+  extraCostItems=[];renderExtraCostRows();
 
   ['fence','found','custom','prod2'].forEach(t=>setMg(t,0));
   switchTab('fence');
