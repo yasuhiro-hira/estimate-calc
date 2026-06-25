@@ -1870,6 +1870,28 @@ function saveHeaderStaffPreset(){
   renderHeaderStaffPresets();
 }
 
+// ===== 起動時 物件情報モーダル =====
+function openEstInfoModal(){
+  const cc=document.getElementById('modalCustPresetBtns');
+  if(cc)cc.innerHTML=headerCustPresets.map(p=>`<button onclick="document.getElementById('modalClient').value=${JSON.stringify(p)}" class="sel-btn" style="padding:3px 8px;font-size:11px;">${p}</button>`).join('');
+  const sc=document.getElementById('modalStaffPresetBtns');
+  if(sc)sc.innerHTML=headerStaffPresets.map(p=>`<button onclick="document.getElementById('modalStaff').value=${JSON.stringify(p)}" class="sel-btn" style="padding:3px 8px;font-size:11px;">${p}</button>`).join('');
+  const modal=document.getElementById('estInfoModal');
+  if(modal){modal.style.display='flex';setTimeout(()=>{const el=document.getElementById('modalClient');if(el)el.focus();},80);}
+}
+function confirmEstInfo(){
+  const client=document.getElementById('modalClient').value.trim();
+  const staff=document.getElementById('modalStaff').value.trim();
+  const subject=document.getElementById('modalSubject').value.trim();
+  if(client){document.getElementById('headerClient').value=client;if(!headerCustPresets.includes(client)){headerCustPresets.push(client);localStorage.setItem('ck_cust',JSON.stringify(headerCustPresets));renderHeaderCustPresets();}}
+  if(staff){document.getElementById('headerStaff').value=staff;if(!headerStaffPresets.includes(staff)){headerStaffPresets.push(staff);localStorage.setItem('ck_staff',JSON.stringify(headerStaffPresets));renderHeaderStaffPresets();}}
+  if(subject)document.getElementById('headerSubject').value=subject;
+  document.getElementById('estInfoModal').style.display='none';
+}
+function cancelEstInfo(){
+  document.getElementById('estInfoModal').style.display='none';
+}
+
 // ===== 品目追加アコーディオン =====
 function toggleAddItemSection(){
   const sec=document.getElementById('addItemSection');
@@ -2645,7 +2667,48 @@ renderHeaderStaffPresets();
     }
   }catch(e){console.error('State restore failed:',e);}
 })();
+
+// 起動時モーダル：保存ファイルから開いた場合（顧客名が入力済み）はスキップ
+(function(){
+  const hdr=document.getElementById('headerClient');
+  if(hdr&&hdr.value.trim())return;
+  openEstInfoModal();
+})();
 </script>
+
+<!-- 起動時 物件情報入力モーダル -->
+<div id="estInfoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:400;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;padding:24px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:3px;">物件情報を入力</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:18px;">後からでも変更できます。計算だけする場合はキャンセル。</div>
+    <div style="display:grid;gap:12px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:3px;">顧客名</div>
+        <div id="modalCustPresetBtns" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;min-height:0;"></div>
+        <input type="text" id="modalClient" placeholder="日本道路 株式会社"
+          style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:'Noto Sans JP',sans-serif;outline:none;"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('modalStaff').focus();}">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:3px;">担当者</div>
+        <div id="modalStaffPresetBtns" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;min-height:0;"></div>
+        <input type="text" id="modalStaff" placeholder="平野 泰宏"
+          style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:'Noto Sans JP',sans-serif;outline:none;"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('modalSubject').focus();}">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:3px;">物件名</div>
+        <input type="text" id="modalSubject" placeholder="（仮称）新宿区下落合1丁目計画 新築工事"
+          style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:'Noto Sans JP',sans-serif;outline:none;"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();confirmEstInfo();}">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <button onclick="cancelEstInfo()" style="flex:1;padding:12px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:14px;cursor:pointer;color:var(--text2);font-family:'Noto Sans JP',sans-serif;">キャンセル</button>
+      <button onclick="confirmEstInfo()" style="flex:2;padding:12px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">開始 →</button>
+    </div>
+  </div>
+</div>
 
 <!-- PDF インポートモーダル -->
 <div id="pdfImportModal" class="pdf-modal-overlay" style="display:none;">
