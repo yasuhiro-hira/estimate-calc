@@ -403,8 +403,11 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       <label>品目名</label>
       <input type="text" id="customName" placeholder="施工費・門扉など">
     </div>
-    <div class="col3 gap">
-      <div class="field"><label>原価単価（円）</label><input type="number" id="customCost" placeholder="5000" inputmode="numeric"></div>
+    <div class="col2 gap">
+      <div class="field"><label>材料原価単価（円）</label><input type="number" id="customCost" placeholder="5000" inputmode="numeric"></div>
+      <div class="field"><label>施工費単価（円）</label><input type="number" id="customLabor" placeholder="0" inputmode="numeric"></div>
+    </div>
+    <div class="col2 gap">
       <div class="field"><label>数量</label><input type="number" id="customQty" placeholder="1" inputmode="decimal"></div>
       <div class="field"><label>単位</label><input type="text" id="customUnit" placeholder="式"></div>
     </div>
@@ -1263,12 +1266,15 @@ function addItem(){
   else if(currentTab==='custom'){
     const name=document.getElementById('customName').value.trim();
     const costUnit=parseFloat(document.getElementById('customCost').value)||0;
+    const laborUnit=parseFloat(document.getElementById('customLabor').value)||0;
     const qty=parseFloat(document.getElementById('customQty').value)||0;
     const unit=document.getElementById('customUnit').value||'式';
-    if(!name||!costUnit||!qty){alert('品目名・原価単価・数量を入力してください');return;}
-    const cost=costUnit*qty;
+    if(!name||!qty){alert('品目名・数量を入力してください');return;}
+    const totalCostUnit=costUnit+laborUnit;
+    const cost=totalCostUnit*qty;
+    const laborCostTotal=laborUnit*qty;
     const margin=globalMg;
-    const sellPerUnit=margin>0&&margin<100?costUnit/(1-margin/100):costUnit;
+    const sellPerUnit=margin>0&&margin<100?totalCostUnit/(1-margin/100):totalCostUnit;
     const estPerUnit=ceilK(sellPerUnit,100);
     const estTotal=Math.round(estPerUnit*qty);
     const {finalEst,discount}=calcRounding(estTotal,cost);
@@ -1279,9 +1285,9 @@ function addItem(){
       hinshuu:name,
       naiyaku:'',
       title:name, titleSub:`×${qty}${unit}`,
-      costUnit, qty, unit, cost, margin,
+      costUnit, laborUnit, qty, unit, cost, margin,
       estPerUnit, estTotal, discount, finalEst, profit, profitRate,
-      estFinal:finalEst, costTotal:cost, laborCost:0,
+      estFinal:finalEst, costTotal:cost, laborCost:laborCostTotal,
     });
     renderGroups();
     resetToTop();
@@ -1537,7 +1543,8 @@ function editGroup(id){
   else if(g.type==='custom'){
     switchTab('custom');
     document.getElementById('customName').value=g.hinshuu;
-    document.getElementById('customCost').value=g.costUnit;
+    document.getElementById('customCost').value=g.costUnit||0;
+    document.getElementById('customLabor').value=g.laborUnit||0;
     document.getElementById('customQty').value=g.qty;
     document.getElementById('customUnit').value=g.unit;
   }
@@ -1576,6 +1583,7 @@ function resetToTop(){
 
   safe('customName',el=>el.value='');
   safe('customCost',el=>el.value='');
+  safe('customLabor',el=>el.value='');
   safe('customQty',el=>el.value='');
   safe('customUnit',el=>el.value='');
 
@@ -1674,7 +1682,8 @@ function renderGrand(){
       if(g.foundMatCost)foundMatTotal+=g.foundMatCost;
       if(g.foundLabCost)laborTotal+=g.foundLabCost;
     } else if(g.type==='custom'){
-      customTotal+=g.cost;
+      customTotal+=(g.costUnit||0)*g.qty;
+      if(g.laborCost)laborTotal+=g.laborCost;
     }
   });
   const bdRows=[];
