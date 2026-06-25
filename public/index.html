@@ -164,6 +164,33 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
   <p>品目追加 → 材工基礎込みm単価 → 合計</p>
 </header>
 
+<!-- 物件情報（常時表示） -->
+<div class="card" id="estHeaderCard" style="margin:10px 16px 0;">
+  <div class="card-title">物件情報</div>
+  <div style="display:grid;gap:8px;">
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:3px;">顧客名</div>
+      <div id="headerCustPresetBtns" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;"></div>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="headerClient" placeholder="日本道路 株式会社" style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;">
+        <button onclick="saveHeaderCustPreset()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;white-space:nowrap;cursor:pointer;background:#fafafa;">保存</button>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:3px;">担当者</div>
+      <div id="headerStaffPresetBtns" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;"></div>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="headerStaff" placeholder="平野 泰宏" style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;">
+        <button onclick="saveHeaderStaffPreset()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;white-space:nowrap;cursor:pointer;background:#fafafa;">保存</button>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:3px;">物件名</div>
+      <input type="text" id="headerSubject" placeholder="（仮称）新宿区下落合1丁目計画 新築工事" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;">
+    </div>
+  </div>
+</div>
+
 <!-- 常時表示ドロップゾーン -->
 <div id="pageDropZone" class="page-dropzone">
   <span class="page-dz-icon">📂</span>
@@ -181,27 +208,33 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
   <div id="importQueueList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
 </div>
 
-<!-- 製品共通フォーム（フェンス/門扉/バリカー/その他/規格品） -->
-<div id="tab-product-form" class="tab-panel show">
+<!-- 品目追加トグル（常時表示） -->
+<button id="addItemToggle" onclick="toggleAddItemSection()" style="display:block;width:calc(100% - 32px);margin:10px 16px 0;padding:12px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);font-size:14px;font-weight:700;color:var(--text2);cursor:pointer;text-align:left;">＋ 品目を追加する ▼</button>
 
-  <!-- ① 品種名 + カテゴリ選択 -->
-  <div class="card">
-    <div class="card-title">① 品種名</div>
-    <div id="hinshuuInputWrap">
-      <div class="field">
-        <input type="text" id="prodHinshuuInput" placeholder="例：北側メッシュフェンス">
-      </div>
-    </div>
-    <div id="catBtnRow" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
-      <button class="sel-btn cat-btn" data-cat="fence" onclick="selectCategory('fence')">🔲 フェンス</button>
-      <button class="sel-btn cat-btn" data-cat="gate" onclick="selectCategory('gate')">🚪 門扉</button>
-      <button class="sel-btn cat-btn" data-cat="bollard" onclick="selectCategory('bollard')">🚧 バリカー</button>
-      <button class="sel-btn cat-btn" data-cat="other" onclick="selectCategory('other')">🔧 その他</button>
-      <button class="sel-btn cat-btn" data-tab="fence-spec" onclick="switchTab('fence-spec')">📐 規格品</button>
-      <button class="sel-btn cat-btn" data-tab="foundation" onclick="switchTab('foundation')">⬜ 独立基礎</button>
-      <button class="sel-btn cat-btn" data-tab="custom" onclick="switchTab('custom')">✏️ 手入力</button>
+<!-- 品目追加セクション（アコーディオン） -->
+<div id="addItemSection">
+
+<!-- 品種名 + カテゴリ選択（addItemSection内、常に表示） -->
+<div class="card">
+  <div class="card-title">① 品種名</div>
+  <div id="hinshuuInputWrap">
+    <div class="field">
+      <input type="text" id="prodHinshuuInput" placeholder="例：北側メッシュフェンス">
     </div>
   </div>
+  <div id="catBtnRow" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+    <button class="sel-btn cat-btn" data-cat="fence" onclick="selectCategory('fence')">🔲 フェンス</button>
+    <button class="sel-btn cat-btn" data-cat="gate" onclick="selectCategory('gate')">🚪 門扉</button>
+    <button class="sel-btn cat-btn" data-cat="bollard" onclick="selectCategory('bollard')">🚧 バリカー</button>
+    <button class="sel-btn cat-btn" data-cat="other" onclick="selectCategory('other')">🔧 その他</button>
+    <button class="sel-btn cat-btn" data-tab="fence-spec" onclick="switchTab('fence-spec')">📐 規格品</button>
+    <button class="sel-btn cat-btn" data-tab="foundation" onclick="switchTab('foundation')">⬜ 独立基礎</button>
+    <button class="sel-btn cat-btn" data-tab="custom" onclick="switchTab('custom')">✏️ 手入力</button>
+  </div>
+</div>
+
+<!-- 製品共通フォーム（フェンス/門扉/バリカー/その他/規格品） -->
+<div id="tab-product-form" class="tab-panel show">
 
   <!-- ② 工種 -->
   <div id="subtypeSection" class="card" style="display:none;">
@@ -394,6 +427,8 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
 
 <button class="add-btn" onclick="addItem()">＋ 品目を追加</button>
 
+</div><!-- /addItemSection -->
+
 <!-- 全体合計（品目リストの上） -->
 <div class="grand-card" id="grandCard" style="display:none;">
   <div class="grand-hd">全体合計</div>
@@ -450,7 +485,6 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
     <div style="font-size:15px;font-weight:700;margin-bottom:16px;">💾 見積を保存</div>
     <div style="display:flex;flex-direction:column;gap:12px;">
       <div class="field"><label>件名（ファイル名になります）</label><input type="text" id="saveSubject" placeholder="山岡家瑞穂店 フェンス工事"></div>
-      <div class="field"><label>客先</label><input type="text" id="saveClient" placeholder="日本道路 株式会社"></div>
       <div class="field"><label>日付</label><input type="text" id="saveDate"></div>
     </div>
     <div style="display:flex;gap:8px;margin-top:18px;">
@@ -468,22 +502,6 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
       <div class="col2">
         <div class="field"><label>見積番号</label><input type="text" id="pdfEstNo" placeholder="20260610-01"></div>
         <div class="field"><label>日付</label><input type="text" id="pdfDate"></div>
-      </div>
-      <div class="field">
-        <label>宛先（会社名）</label>
-        <div id="customerPresetBtns" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;"></div>
-        <div style="display:flex;gap:6px;">
-          <input type="text" id="pdfClient" placeholder="日本道路 株式会社" style="flex:1;">
-          <button onclick="saveCustomerPreset()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;white-space:nowrap;cursor:pointer;background:#fafafa;">保存</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>担当者</label>
-        <div id="staffPresetBtns" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;"></div>
-        <div style="display:flex;gap:6px;">
-          <input type="text" id="pdfStaff" placeholder="平野 泰宏" style="flex:1;">
-          <button onclick="saveStaffPreset()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;white-space:nowrap;cursor:pointer;background:#fafafa;">保存</button>
-        </div>
       </div>
       <div class="field"><label>件名</label><input type="text" id="pdfSubject" placeholder="山岡家瑞穂店 フェンス工事"></div>
       <div class="field"><label>納期</label><input type="text" id="pdfNoki" placeholder="御打合せ"></div>
@@ -1084,6 +1102,12 @@ function calcRounding(estTotal,cost){
   if(finalEst===0||pRate<5) finalEst=Math.max(Math.floor(estTotal/1000)*1000,estTotal>0?1000:0);
   return {finalEst,discount:estTotal-finalEst};
 }
+function globalRound(v){
+  if(v>=1000000) return Math.floor(v/100000)*100000;
+  if(v>=100000)  return Math.floor(v/10000)*10000;
+  if(v>=10000)   return Math.floor(v/1000)*1000;
+  return v;
+}
 
 function calcFenceGroup(fence, m, fenceLaborPerM, found, foundQty, foundLabor, margin){
   // フェンス原価
@@ -1410,6 +1434,7 @@ function clearAll(){if(!confirm('全クリアしますか？'))return;groups=[];
 function editGroup(id){
   const g=groups.find(x=>x.id===id);
   if(!g)return;
+  expandAddItemSection();
   // いったん削除してフォームに復元
   groups=groups.filter(x=>x.id!==id);
   renderGroups();
@@ -1624,26 +1649,26 @@ function renderGrand(){
   document.getElementById('grandProfitAmt').innerHTML=`${Math.round(totalProfit).toLocaleString()}<span style="font-size:12px;margin-left:2px;">円</span>`;
   document.getElementById('grandProfitRate').textContent=`${totalProfitRate.toFixed(1)}%`;
 
-  // 内訳
+  // 内訳（メーカー別集計）
   const makerTotals={};
-  const productTotals={};
   let lossTotal=0,foundMatTotal=0,laborTotal=0,customTotal=0;
   groups.forEach(g=>{
     if(g.type==='fence'){
-      makerTotals[g.fence.maker]=(makerTotals[g.fence.maker]||0)+g.res.fence.mat;
+      const mk=g.fence.maker||'フェンス';
+      makerTotals[mk]=(makerTotals[mk]||0)+g.res.fence.mat;
       lossTotal+=g.res.fence.loss;
       laborTotal+=g.res.fence.lab;
       if(g.withFound){foundMatTotal+=g.res.found.mat;laborTotal+=g.res.found.lab;}
     } else if(g.type==='foundation'){
       foundMatTotal+=g.mat;laborTotal+=g.lab;
     } else if(g.type==='product'){
-      const k=g.koushuu;
-      productTotals[k]=(productTotals[k]||0)+g.matCost;
+      const mk=g.koushuu||'その他';
+      makerTotals[mk]=(makerTotals[mk]||0)+g.matCost;
       if(g.hasLoss)lossTotal+=g.lossCost;
       laborTotal+=g.labCost;
     } else if(g.type==='product2'){
-      const k=g.maker?`${g.koushuu}（${g.maker}）`:g.koushuu;
-      productTotals[k]=(productTotals[k]||0)+g.matCost;
+      const mk=g.maker||g.koushuu||'その他';
+      makerTotals[mk]=(makerTotals[mk]||0)+g.matCost;
       if(g.hasLoss)lossTotal+=g.lossCost;
       laborTotal+=g.labCost;
       if(g.foundMatCost)foundMatTotal+=g.foundMatCost;
@@ -1653,8 +1678,7 @@ function renderGrand(){
     }
   });
   const bdRows=[];
-  Object.entries(makerTotals).forEach(([maker,val])=>bdRows.push([maker+'（材料）',val]));
-  Object.entries(productTotals).forEach(([k,val])=>bdRows.push([k+'（仕入）',val]));
+  Object.entries(makerTotals).forEach(([maker,val])=>bdRows.push([maker,val]));
   if(lossTotal>0)bdRows.push(['材料ロス（5%）',lossTotal]);
   if(foundMatTotal>0)bdRows.push(['基礎材料費',foundMatTotal]);
   if(laborTotal>0)bdRows.push(['施工費計',laborTotal]);
@@ -1674,13 +1698,15 @@ function openSaveModal(){
   const today=new Date();
   const el=document.getElementById('saveDate');
   if(!el.value) el.value=`令和${today.getFullYear()-2018}年${today.getMonth()+1}月${today.getDate()}日`;
+  const subj=document.getElementById('saveSubject');
+  if(subj&&!subj.value){const hs=document.getElementById('headerSubject');if(hs)subj.value=hs.value;}
   document.getElementById('saveModal').style.display='block';
 }
 function closeSaveModal(){document.getElementById('saveModal').style.display='none';}
 
 function saveEstimate(){
   if(groups.length===0){alert('品目がありません');return;}
-  const subject=document.getElementById('saveSubject').value||'見積';
+  const subject=document.getElementById('saveSubject').value||document.getElementById('headerSubject').value||'見積';
   closeSaveModal();
 
   // 状態をheadに注入（type="application/json"なので自動実行されない）
@@ -1697,8 +1723,11 @@ function saveEstimate(){
   const prevTitle=document.title;
   document.title=subject;
 
-  // condListの入力値をHTML属性に同期（outerHTMLはvalue属性を使うため）
+  // input値をHTML属性に同期（outerHTMLはvalue属性を使うため）
   document.querySelectorAll('#condList input').forEach(inp=>inp.setAttribute('value',inp.value));
+  ['headerClient','headerStaff','headerSubject'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.setAttribute('value',el.value);
+  });
 
   // 現在のページHTMLをそのままキャプチャ（Firebaseへのfetch不要）
   const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
@@ -1778,7 +1807,12 @@ function openPdfModal(){
   buildExpiryOptions();
   const list=document.getElementById('condList');
   if(list.children.length===0)DEFAULT_CONDITIONS.forEach(t=>addCondItem(t));
-  renderCustomerPresets();renderStaffPresets();
+  // 件名を物件情報ヘッダーから自動入力
+  const subj=document.getElementById('pdfSubject');
+  if(subj&&!subj.value){
+    const hs=document.getElementById('headerSubject');
+    if(hs)subj.value=hs.value;
+  }
   document.getElementById('pdfModal').style.display='block';
 }
 function closePdfModal(){document.getElementById('pdfModal').style.display='none';}
@@ -1804,6 +1838,54 @@ function saveStaffPreset(){
   if(!staffPresets.includes(v)){staffPresets.push(v);localStorage.setItem('ck_staff',JSON.stringify(staffPresets));renderStaffPresets();}
   else alert('すでに登録されています');
 }
+
+// ===== 物件情報ヘッダー プリセット =====
+let headerCustPresets=JSON.parse(localStorage.getItem('ck_cust')||'[]');
+let headerStaffPresets=JSON.parse(localStorage.getItem('ck_staff')||'[]');
+function renderHeaderCustPresets(){
+  const cont=document.getElementById('headerCustPresetBtns');if(!cont)return;
+  cont.innerHTML=headerCustPresets.map((p,i)=>`<button onclick="document.getElementById('headerClient').value='${p.replace(/'/g,"\\'")}';renderHeaderCustPresets();" class="sel-btn" style="padding:3px 8px;font-size:11px;">${p}</button>`).join('');
+}
+function saveHeaderCustPreset(){
+  const v=document.getElementById('headerClient').value.trim();if(!v)return;
+  if(!headerCustPresets.includes(v)){headerCustPresets.push(v);localStorage.setItem('ck_cust',JSON.stringify(headerCustPresets));}
+  renderHeaderCustPresets();
+}
+function renderHeaderStaffPresets(){
+  const cont=document.getElementById('headerStaffPresetBtns');if(!cont)return;
+  cont.innerHTML=headerStaffPresets.map((p,i)=>`<button onclick="document.getElementById('headerStaff').value='${p.replace(/'/g,"\\'")}';renderHeaderStaffPresets();" class="sel-btn" style="padding:3px 8px;font-size:11px;">${p}</button>`).join('');
+}
+function saveHeaderStaffPreset(){
+  const v=document.getElementById('headerStaff').value.trim();if(!v)return;
+  if(!headerStaffPresets.includes(v)){headerStaffPresets.push(v);localStorage.setItem('ck_staff',JSON.stringify(headerStaffPresets));}
+  renderHeaderStaffPresets();
+}
+
+// ===== 品目追加アコーディオン =====
+function toggleAddItemSection(){
+  const sec=document.getElementById('addItemSection');
+  const btn=document.getElementById('addItemToggle');
+  if(!sec||!btn)return;
+  const hide=sec.style.display!=='none';
+  sec.style.display=hide?'none':'block';
+  btn.textContent=hide?'＋ 品目を追加する ▼':'✕ 閉じる ▲';
+  btn.style.background=hide?'var(--card)':'var(--accent-light)';
+  btn.style.borderColor=hide?'var(--border)':'var(--accent)';
+  btn.style.color=hide?'var(--text2)':'var(--accent)';
+}
+function expandAddItemSection(){
+  const sec=document.getElementById('addItemSection');
+  const btn=document.getElementById('addItemToggle');
+  if(sec)sec.style.display='block';
+  if(btn){btn.textContent='✕ 閉じる ▲';btn.style.background='var(--accent-light)';btn.style.borderColor='var(--accent)';btn.style.color='var(--accent)';}
+}
+function collapseAddItemSection(){
+  const sec=document.getElementById('addItemSection');
+  const btn=document.getElementById('addItemToggle');
+  if(sec)sec.style.display='none';
+  if(btn){btn.textContent='＋ 品目を追加する ▼';btn.style.background='var(--card)';btn.style.borderColor='var(--border)';btn.style.color='var(--text2)';}
+}
+
 function toggleCondAccordion(){
   const body=document.getElementById('condAccordionBody');
   const icon=document.getElementById('condAccordionIcon');
@@ -1814,8 +1896,8 @@ function toggleCondAccordion(){
 
 function genPdf(){
   const gs=groups;if(!gs||gs.length===0)return;
-  const client=document.getElementById('pdfClient').value||'　';
-  const subject=document.getElementById('pdfSubject').value||'　';
+  const client=(document.getElementById('headerClient').value||'').trim()||'　';
+  const subject=(document.getElementById('pdfSubject').value||'').trim()||(document.getElementById('headerSubject').value||'').trim()||'　';
   const date=document.getElementById('pdfDate').value||'　';
   const estNo=document.getElementById('pdfEstNo').value.trim()||'';
   const expiry=document.getElementById('pdfExpiry').value||'';
@@ -1823,7 +1905,7 @@ function genPdf(){
   if(estNo)saveEstNo(estNo);
   const condHTML=Array.from(document.querySelectorAll('#condList input'))
     .map(inp=>inp.value.trim()).filter(Boolean).map(l=>`<p>${l}</p>`).join('');
-  const staff=document.getElementById('pdfStaff').value.trim()||'平野 泰宏';
+  const staff=(document.getElementById('headerStaff').value||'').trim()||'平野 泰宏';
   const staffShort=staff.replace(/\s/g,'').slice(0,2);
   const issuer='株式会社サクラ',addr='東京都文京区本駒込4－42－11　サクラ文京2F',tel='03(3828)4466';
   const fmtN=n=>Math.round(n).toLocaleString();
@@ -1864,7 +1946,7 @@ function genPdf(){
     feeRows=`<tr><td class="ctr"></td><td colspan="2">法定福利費</td><td class="num"></td><td class="ctr"></td><td class="num"></td><td class="num">${fmtN(pdfHoufuku)}</td><td></td></tr><tr><td class="ctr"></td><td colspan="2">諸経費</td><td class="num"></td><td class="ctr"></td><td class="num"></td><td class="num">${fmtN(pdfShokehiAdj)}</td><td></td></tr>`;
     discountRow='';
   } else {
-    pdfFinal=baseEstFinal;
+    pdfFinal=globalRound(preTotalSum);
     const discountTotal=preTotalSum-pdfFinal;
     discountRow=discountTotal>0?`<tr class="disc"><td colspan="5" class="ctr">値　引　き</td><td></td><td class="num">－ ${fmtN(discountTotal)}</td><td></td></tr>`:'';
   }
@@ -2007,6 +2089,8 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
 </body></html>`);
   w.document.close();
   closePdfModal();
+  collapseAddItemSection();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ===== PDF インポート =====
@@ -2507,6 +2591,7 @@ function renderImportQueue(){
 function loadQueueItem(i){
   activeQueueIdx=i;
   const item=importQueue[i];
+  expandAddItemSection();
   // 品種名を入力欄に反映
   const hi=document.getElementById('prodHinshuuInput');
   if(hi)hi.value=item.name;
@@ -2530,6 +2615,13 @@ function removeQueueItem(i){
 // ===== 初期化 =====
 selectCategory('fence');
 renderFoundOnlyGrid();
+renderHeaderCustPresets();
+renderHeaderStaffPresets();
+// アコーディオンの初期ラベル（最初は展開状態）
+(function(){
+  const btn=document.getElementById('addItemToggle');
+  if(btn){btn.textContent='✕ 閉じる ▲';btn.style.background='var(--accent-light)';btn.style.borderColor='var(--accent)';btn.style.color='var(--accent)';}
+})();
 
 // 保存ファイルから開いた場合の状態復元
 // saved-stateは</head>内に注入されるため、body末尾のこのスクリプト実行時には既にDOM上にある
