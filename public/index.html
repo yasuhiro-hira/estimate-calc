@@ -414,6 +414,27 @@ header p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
   </div>
 </div>
 
+<!-- 見積書 表示数量・単位の上書き（任意） -->
+<div class="card" style="margin-top:8px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <div class="card-title" style="margin-bottom:0;">見積書の表示（任意）</div>
+    <div style="font-size:10px;color:var(--text3);">空欄 = 計算値のまま</div>
+  </div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">例：12台で計算しているが見積書は「1 箇所」で表示したい場合</div>
+  <div style="display:flex;gap:8px;">
+    <div style="flex:1;">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:3px;">数量</div>
+      <input type="number" id="dispQtyInput" placeholder="例: 1" inputmode="decimal"
+        style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:16px;font-family:'JetBrains Mono',monospace;font-weight:700;outline:none;color:var(--text);">
+    </div>
+    <div style="flex:1;">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:3px;">単位</div>
+      <input type="text" id="dispUnitInput" placeholder="例: 箇所"
+        style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:16px;font-family:'Noto Sans JP',sans-serif;font-weight:700;outline:none;color:var(--text);">
+    </div>
+  </div>
+</div>
+
 <!-- 利益率（全体） -->
 <div class="card" style="margin-top:8px;">
   <div class="card-title">利益率（全体）</div>
@@ -1150,6 +1171,9 @@ function calcFenceGroup(fence, m, fenceLaborPerM, found, foundQty, foundLabor, m
 
 // ===== 品目追加 =====
 function addItem(){
+  const _dqRaw=parseFloat(document.getElementById('dispQtyInput').value);
+  const dispQty=(!isNaN(_dqRaw)&&_dqRaw>0)?_dqRaw:null;
+  const dispUnit=document.getElementById('dispUnitInput').value.trim()||null;
   if(PROD_TABS.includes(currentTab)){
     // 規格品（fence-spec）は旧フェンスロジック
     if(selSubtype&&selSubtype.id==='fence-spec'){
@@ -1172,6 +1196,7 @@ function addItem(){
         withFound:foundWithFence, foundName:foundWithFence?selFenceFound.name:'',
         foundQty, foundLabor, fence:selFence, m, fenceLaborPerM, margin, res,
         estFinal:res.finalEst, costTotal:res.totalCost, laborCost,
+        dispQty, dispUnit,
       });
       renderGroups();resetToTop();
       return;
@@ -1231,6 +1256,7 @@ function addItem(){
       estFinal:finalEst, costTotal:totalCost, laborCost,
       title:hinshuuVal,
       titleSub:`${makerSpec?makerSpec+' ':''}×${qty}${selSubtype.unit}`,
+      dispQty, dispUnit,
     });
     renderGroups();resetToTop();
     return;
@@ -1259,6 +1285,7 @@ function addItem(){
       qty, labor, mat, lab, cost, margin,
       estPerUnit, estTotal, discount, finalEst, profit, profitRate,
       estFinal:finalEst, costTotal:cost, laborCost:lab,
+      dispQty, dispUnit,
     });
     renderGroups();
     resetToTop();
@@ -1288,6 +1315,7 @@ function addItem(){
       costUnit, laborUnit, qty, unit, cost, margin,
       estPerUnit, estTotal, discount, finalEst, profit, profitRate,
       estFinal:finalEst, costTotal:cost, laborCost:laborCostTotal,
+      dispQty, dispUnit,
     });
     renderGroups();
     resetToTop();
@@ -1548,6 +1576,11 @@ function editGroup(id){
     document.getElementById('customQty').value=g.qty;
     document.getElementById('customUnit').value=g.unit;
   }
+  // 見積書表示上書きを復元
+  const dqEl=document.getElementById('dispQtyInput');
+  const duEl=document.getElementById('dispUnitInput');
+  if(dqEl)dqEl.value=g.dispQty!=null?g.dispQty:'';
+  if(duEl)duEl.value=g.dispUnit||'';
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -1613,6 +1646,8 @@ function resetToTop(){
   if(shikiBtn){shikiBtn.classList.remove('active');shikiBtn.textContent='/ 単位';}
 
   ['fence','found','custom','prod2'].forEach(t=>setMg(t,0));
+  safe('dispQtyInput',el=>el.value='');
+  safe('dispUnitInput',el=>el.value='');
   switchTab('fence');
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1942,10 +1977,10 @@ function genPdf(){
   const fmtN=n=>Math.round(n).toLocaleString();
 
   const tableRows=gs.map((g,i)=>{
-    const qty=g.type==='fence'?g.m:g.qty;
-    const unit=g.type==='fence'?'m':(g.type==='foundation'?'個':g.unit);
-    const perUnit=g.type==='fence'?g.res.estPerM:g.estPerUnit;
     const estTotal=g.type==='fence'?g.res.estTotal:g.estTotal;
+    const qty=g.dispQty!=null?g.dispQty:(g.type==='fence'?g.m:g.qty);
+    const unit=g.dispUnit||(g.type==='fence'?'m':(g.type==='foundation'?'個':g.unit));
+    const perUnit=g.dispQty!=null?Math.round(estTotal/g.dispQty):(g.type==='fence'?g.res.estPerM:g.estPerUnit);
     const hinshuu=g.hinshuu||(g.type==='fence'?'メッシュフェンス':g.type==='foundation'?'独立基礎':g.title);
     const naiyakuBase=g.type==='fence'?`${g.fence.maker} ${g.naiyaku||''}`:(g.naiyaku!==undefined?g.naiyaku:'');
     const naiyaku=g.type!=='fence'&&g.categoryId==='fence'
