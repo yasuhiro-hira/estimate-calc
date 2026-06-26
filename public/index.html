@@ -1978,9 +1978,9 @@ function genPdf(){
 
   const tableRows=gs.map((g,i)=>{
     const estTotal=g.type==='fence'?g.res.estTotal:g.estTotal;
-    const qty=g.dispQty!=null?g.dispQty:(g.type==='fence'?g.m:g.qty);
-    const unit=g.dispUnit||(g.type==='fence'?'m':(g.type==='foundation'?'個':g.unit));
-    const perUnit=g.dispQty!=null?Math.round(estTotal/g.dispQty):(g.type==='fence'?g.res.estPerM:g.estPerUnit);
+    const actualQty=g.type==='fence'?g.m:g.qty;
+    const actualUnit=g.type==='fence'?'m':(g.type==='foundation'?'個':g.unit);
+    const defaultPerUnit=g.type==='fence'?g.res.estPerM:g.estPerUnit;
     const hinshuu=g.hinshuu||(g.type==='fence'?'メッシュフェンス':g.type==='foundation'?'独立基礎':g.title);
     const naiyakuBase=g.type==='fence'?`${g.fence.maker} ${g.naiyaku||''}`:(g.naiyaku!==undefined?g.naiyaku:'');
     const naiyaku=g.type!=='fence'&&g.categoryId==='fence'
@@ -1988,14 +1988,73 @@ function genPdf(){
       :g.subtypeId==='bollard-concrete'?`${naiyakuBase} 現場打ち施工`
       :g.type!=='fence'&&g.foundName?`${naiyakuBase} 基礎込み □${g.foundName}`
       :naiyakuBase;
-    const mainRow=`<tr>
-      <td class="ctr">${i+1}</td>
-      <td>${hinshuu}</td><td>${naiyaku}</td>
-      <td class="num">${qty}</td><td class="ctr">${unit}</td>
-      <td class="num">${fmtN(perUnit)}</td>
-      <td class="num">${fmtN(estTotal)}</td><td></td>
-    </tr>`;
-    return mainRow;
+    const laborCost=g.laborCost||0;
+    const hasLabor=laborCost>0;
+    const dispQty=g.dispQty!=null?g.dispQty:null;
+    const dispUnit=g.dispUnit||actualUnit;
+
+    if(hasLabor){
+      const totalCostForSplit=g.costTotal||1;
+      const matCostAmt=totalCostForSplit-laborCost;
+      const matSellTotal=Math.round(estTotal*matCostAmt/totalCostForSplit);
+      const labSellTotal=estTotal-matSellTotal;
+      const matSellPerUnit=Math.round(matSellTotal/actualQty);
+      const labSellPerUnit=Math.round(labSellTotal/actualQty);
+      if(dispQty!=null){
+        return `<tr>
+          <td class="ctr">${i+1}</td>
+          <td>${hinshuu}（${dispUnit}）</td><td>${naiyaku}</td>
+          <td class="num">${dispQty}</td><td class="ctr">${dispUnit}</td>
+          <td></td><td></td><td></td>
+        </tr><tr class="sub-row">
+          <td></td><td style="padding-left:10px">本体材料費</td><td></td>
+          <td class="num">${actualQty}</td><td class="ctr">${actualUnit}</td>
+          <td class="num">${fmtN(matSellPerUnit)}</td><td class="num">${fmtN(matSellTotal)}</td><td></td>
+        </tr><tr class="sub-row">
+          <td></td><td style="padding-left:10px">本体施工費</td><td></td>
+          <td class="num">${actualQty}</td><td class="ctr">${actualUnit}</td>
+          <td class="num">${fmtN(labSellPerUnit)}</td><td class="num">${fmtN(labSellTotal)}</td><td></td>
+        </tr><tr class="sub-row sep-top">
+          <td colspan="5"></td>
+          <td style="text-align:right">小計</td>
+          <td class="num">${fmtN(estTotal)}</td><td></td>
+        </tr><tr class="sub-row unit-pr">
+          <td colspan="5"></td>
+          <td style="text-align:center">${dispUnit}/円</td>
+          <td class="num">${fmtN(Math.round(estTotal/dispQty))}</td><td></td>
+        </tr>`;
+      } else {
+        return `<tr>
+          <td class="ctr">${i+1}</td>
+          <td>${hinshuu}</td><td>${naiyaku}</td>
+          <td class="num">${actualQty}</td><td class="ctr">${actualUnit}</td>
+          <td class="num">${fmtN(matSellPerUnit)}</td><td class="num">${fmtN(matSellTotal)}</td><td></td>
+        </tr><tr class="sub-row">
+          <td></td><td style="padding-left:10px">本体施工費</td><td></td>
+          <td class="num">${actualQty}</td><td class="ctr">${actualUnit}</td>
+          <td class="num">${fmtN(labSellPerUnit)}</td><td class="num">${fmtN(labSellTotal)}</td><td></td>
+        </tr><tr class="sub-row sep-top">
+          <td colspan="5"></td>
+          <td style="text-align:right">小計</td>
+          <td class="num">${fmtN(estTotal)}</td><td></td>
+        </tr><tr class="sub-row unit-pr">
+          <td colspan="5"></td>
+          <td style="text-align:center">${actualUnit}/円</td>
+          <td class="num">${fmtN(defaultPerUnit)}</td><td></td>
+        </tr>`;
+      }
+    } else {
+      const qty=dispQty!=null?dispQty:actualQty;
+      const unit=dispQty!=null?dispUnit:actualUnit;
+      const perUnit=dispQty!=null?Math.round(estTotal/dispQty):defaultPerUnit;
+      return `<tr>
+        <td class="ctr">${i+1}</td>
+        <td>${hinshuu}</td><td>${naiyaku}</td>
+        <td class="num">${qty}</td><td class="ctr">${unit}</td>
+        <td class="num">${fmtN(perUnit)}</td>
+        <td class="num">${fmtN(estTotal)}</td><td></td>
+      </tr>`;
+    }
   }).join('');
 
   const preTotalSum=gs.reduce((s,g)=>s+(g.type==='fence'?g.res.estTotal:g.estTotal),0);
@@ -2075,6 +2134,9 @@ tfoot td{border:1px solid #999;padding:3pt 5pt;background:#f0f0f0;font-weight:70
 .disc td{background:#fff9f0!important;}
 .num{text-align:right;}
 .ctr{text-align:center;}
+tbody tr.sub-row td{background:#fefefe!important;font-size:8pt;color:#444;padding:2pt 5pt;}
+tbody tr.sep-top td{border-top:1px solid #aaa!important;}
+tbody tr.unit-pr td{border-bottom:2px solid #999;}
 
 /* conditions */
 .cond{border:1px solid #ccc;padding:4pt 7pt;}
