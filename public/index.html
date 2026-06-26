@@ -1127,9 +1127,8 @@ function calcRounding(estTotal,cost){
   return {finalEst,discount:estTotal-finalEst};
 }
 function globalRound(v){
-  if(v>=1000000) return Math.floor(v/100000)*100000;
-  if(v>=100000)  return Math.floor(v/10000)*10000;
-  if(v>=10000)   return Math.floor(v/1000)*1000;
+  if(v>=10000000) return Math.floor(v/100000)*100000;
+  if(v>=10000)    return Math.floor(v/10000)*10000;
   return v;
 }
 
