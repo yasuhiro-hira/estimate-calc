@@ -2001,11 +2001,12 @@ function genPdf(){
       const matSellPerUnit=Math.round(matSellTotal/actualQty);
       const labSellPerUnit=Math.round(labSellTotal/actualQty);
       if(dispQty!=null){
+        const dispPerUnit=Math.round(estTotal/dispQty);
         return `<tr>
           <td class="ctr">${i+1}</td>
           <td>${hinshuu}（${dispUnit}）</td><td>${naiyaku}</td>
           <td class="num">${dispQty}</td><td class="ctr">${dispUnit}</td>
-          <td></td><td></td><td></td>
+          <td class="num">${fmtN(dispPerUnit)}</td><td></td><td></td>
         </tr><tr class="sub-row">
           <td></td><td style="padding-left:10px">本体材料費</td><td></td>
           <td class="num">${actualQty}</td><td class="ctr">${actualUnit}</td>
